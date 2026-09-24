@@ -40,6 +40,7 @@ class DataQualityReport:
     first_date: pd.Timestamp
     last_date: pd.Timestamp
     missing_observations: int
+    dropped_sessions: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -50,11 +51,12 @@ class DataQualityReport:
             "first_date": self.first_date.date().isoformat(),
             "last_date": self.last_date.date().isoformat(),
             "missing_observations": self.missing_observations,
+            "dropped_sessions": self.dropped_sessions,
         }
 
 
 def monthly_dates(dates: pd.DatetimeIndex) -> Iterator[pd.Timestamp]:
-    """The final available session of each calendar month."""
+    """The final available session of each calendar month in ``dates``."""
     unique = pd.DatetimeIndex(dates.unique()).sort_values()
     for _, group in pd.Series(unique, index=unique).groupby(unique.to_period("M")):
         yield group.iloc[-1]

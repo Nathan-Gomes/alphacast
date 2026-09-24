@@ -11,7 +11,7 @@ import pandas as pd
 
 from .config import MODEL_LABELS, SUPPORTED_MODELS, ResearchConfig
 from .contracts import DataQualityReport, StudyResult
-from .data import synthetic_prices, validate_price_panel
+from .data import drop_incomplete_sessions, synthetic_prices, validate_price_panel
 from .features import (
     FEATURE_COLUMNS,
     FEATURE_LABELS,
@@ -334,7 +334,8 @@ def run_research(
         raise ValueError(f"Unsupported models: {', '.join(sorted(unknown))}")
     if not config.models:
         raise ValueError("Select at least one model.")
-    quality = validate_price_panel(prices, source=source)
+    prices, dropped = drop_incomplete_sessions(prices)
+    quality = validate_price_panel(prices, source=source, dropped_sessions=dropped)
     report(0.02, "Building trailing features")
     full_panel = build_panel(prices, config.horizon_sessions)
     panel = research_ready(full_panel)
@@ -342,6 +343,7 @@ def run_research(
         panel,
         minimum_train_sessions=config.minimum_train_sessions,
         embargo_sessions=config.embargo_sessions,
+        calendar=pd.DatetimeIndex(full_panel.date.unique()),
     )
     if not folds:
         raise RuntimeError("The research run did not create an out-of-sample fold.")

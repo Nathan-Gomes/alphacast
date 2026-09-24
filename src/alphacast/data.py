@@ -62,6 +62,17 @@ def synthetic_prices(
     )
 
 
+def drop_incomplete_sessions(prices: pd.DataFrame, min_coverage: float = 0.9) -> tuple[pd.DataFrame, int]:
+    """Remove sessions where fewer than ``min_coverage`` of securities have a price.
+
+    Yahoo sometimes publishes a session for only part of a universe. A partial
+    cross-section would distort every within-date rank and sector average.
+    """
+    counts = prices.groupby("date").ticker.nunique()
+    keep = counts[counts >= min_coverage * counts.median()].index
+    return prices[prices.date.isin(keep)].reset_index(drop=True), int(len(counts) - len(keep))
+
+
 def validate_price_panel(
     prices: pd.DataFrame,
     *,
@@ -69,6 +80,7 @@ def validate_price_panel(
     requested_tickers: int | None = None,
     minimum_sessions: int = 300,
     minimum_tickers: int = 10,
+    dropped_sessions: int = 0,
 ) -> DataQualityReport:
     """Reject malformed coverage before it can become a research result."""
     missing = REQUIRED_PRICE_COLUMNS - set(prices.columns)
@@ -95,6 +107,7 @@ def validate_price_panel(
         first_date=panel.date.min(),
         last_date=panel.date.max(),
         missing_observations=expected - len(panel),
+        dropped_sessions=dropped_sessions,
     )
 
 

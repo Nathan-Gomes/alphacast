@@ -11,13 +11,22 @@ def expanding_folds(
     panel: pd.DataFrame,
     minimum_train_sessions: int = 252,
     embargo_sessions: int = 20,
+    calendar: pd.DatetimeIndex | None = None,
 ) -> list[WalkForwardFold]:
+    """Monthly folds with an expanding training window.
+
+    ``calendar`` is the full trading calendar. Month-ends come from it, so a month
+    cut short by the missing labels at the end of the sample never becomes a fold.
+    """
     dates = pd.DatetimeIndex(panel.date.unique()).sort_values()
     if len(dates) <= minimum_train_sessions + embargo_sessions:
         raise ValueError("Not enough completed history for an expanding, embargoed study.")
     positions = {date: index for index, date in enumerate(dates)}
     folds = []
-    for date in monthly_dates(dates):
+    month_ends = monthly_dates(dates if calendar is None else pd.DatetimeIndex(calendar))
+    for date in month_ends:
+        if date not in positions:
+            continue
         index = positions[date]
         if index >= minimum_train_sessions + embargo_sessions:
             folds.append(WalkForwardFold(dates[index - embargo_sessions], date, embargo_sessions))

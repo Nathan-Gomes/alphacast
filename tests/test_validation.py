@@ -16,3 +16,14 @@ def test_folds_move_forward_in_time():
     folds = expanding_folds(panel)
     assert all(left.test_date < right.test_date for left, right in pairwise(folds))
 from itertools import pairwise
+
+
+def test_a_month_truncated_by_missing_labels_is_not_a_fold():
+    full = build_panel(synthetic_prices(sessions=800, securities=20))
+    panel = research_ready(full)
+    folds = expanding_folds(panel, calendar=full.date.unique())
+    last_ready = panel.date.max()
+    calendar = full.date.drop_duplicates()
+    same_month = calendar[calendar.dt.to_period("M") == last_ready.to_period("M")]
+    if same_month.max() > last_ready:
+        assert folds[-1].test_date < last_ready.to_period("M").start_time
