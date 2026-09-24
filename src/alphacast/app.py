@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from .universe import UNIVERSES
 
 WEB_DIRECTORY = Path(__file__).with_name("web")
 MAX_TICKERS = 150
+TICKER_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9.\-^=]{0,11}$")
 # Seconds per model for a 98-stock snapshot run on a multi-core laptop. The interface
 # multiplies them by SPEED_FACTOR, set per deployment, to show an honest estimate.
 MODEL_SECONDS = {
@@ -129,6 +131,9 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         raise HTTPException(422, "The holding buffer must be at least the portfolio size.")
     if payload.universe == "custom":
         tickers = list(dict.fromkeys(t.upper().strip() for t in payload.tickers if t.strip()))
+        invalid = [ticker for ticker in tickers if not TICKER_PATTERN.match(ticker)]
+        if invalid:
+            raise HTTPException(422, f"Not valid ticker symbols: {', '.join(invalid[:8])}.")
     else:
         tickers = list(UNIVERSES[payload.universe]["tickers"])
     if payload.source != "synthetic":
