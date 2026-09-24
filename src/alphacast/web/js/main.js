@@ -195,7 +195,14 @@ function closeMenu() {
   $('menu-button').setAttribute('aria-expanded', 'false');
 }
 
+function syncThemeButton() {
+  const label = document.documentElement.dataset.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+  $('theme-button').setAttribute('aria-label', label);
+  $('theme-button').title = label;
+}
+
 function bindShell() {
+  syncThemeButton();
   window.addEventListener('hashchange', render);
   $('run-select').addEventListener('change', (event) => openRun(event.target.value));
   $('model-select').addEventListener('change', (event) => setModel(event.target.value));
@@ -203,6 +210,7 @@ function bindShell() {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = next;
     storage.set('theme', next);
+    syncThemeButton();
     render();
   });
   $('menu-button').addEventListener('click', () => {

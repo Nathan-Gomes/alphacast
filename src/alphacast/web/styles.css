@@ -141,6 +141,8 @@ nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent
 .title-block p { margin: 1px 0 0; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toolbar { display: flex; align-items: center; gap: 10px; }
 .icon-button.menu-button { display: none; }
+#theme-button .icon-moon, :root[data-theme="light"] #theme-button .icon-sun { display: none; }
+:root[data-theme="light"] #theme-button .icon-moon { display: block; }
 .context-bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 9px 24px; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--ink-2); font-size: 12.5px; }
 .context-bar:empty { display: none; }
 .context-bar b { color: var(--ink); font-weight: 500; }

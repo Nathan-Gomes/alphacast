@@ -6,12 +6,17 @@ export const isNum = (value) => typeof value === 'number' && Number.isFinite(val
 
 export function pct(value, digits = 1, { sign = false } = {}) {
   if (!isNum(value)) return MISSING;
+  value = unsign(value, digits + 2);
   const text = `${(value * 100).toFixed(digits)}%`;
   return sign && value > 0 ? `+${text}` : text;
 }
 
+// Values that round to zero print without a sign, never as "-0.000".
+const unsign = (value, digits) => (Math.abs(value) < 0.5 * 10 ** -digits ? 0 : value);
+
 export function num(value, digits = 2, { sign = false } = {}) {
   if (!isNum(value)) return MISSING;
+  value = unsign(value, digits);
   const text = value.toFixed(digits);
   return sign && value > 0 ? `+${text}` : text;
 }

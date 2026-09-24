@@ -60,7 +60,7 @@ export default {
             <b style="left:0;top:0;height:6px;width:${(row.recent_importance / max) * 100}%;background:${modelColor(model)}"></b>
             <b style="left:0;top:8px;height:5px;width:${(row.importance / max) * 100}%;background:var(--bench)"></b>
           </span>
-          <span class="val ${toneClass(row.recent_importance - row.importance)}">${num((row.recent_importance - row.importance) * 100, 1, { sign: true })}</span>
+          <span class="val">${num((row.recent_importance - row.importance) * 100, 1, { sign: true })}</span>
         </div>`).join('')}</div>
       <p class="note">Right column: change in percentage points of attribution share.</p>`;
 
@@ -73,7 +73,7 @@ export default {
         { key: 'status', label: 'Status', sort: (row) => row.psi, render: (row) => statusBadge(row.status) },
         { key: 'reference_median', label: 'Historical median', num: true, render: (row) => (RAW_PERCENT.has(row.feature) ? `$${Intl.NumberFormat('en-US', { notation: 'compact' }).format(row.reference_median)}` : pct(row.reference_median, 1)) },
         { key: 'recent_median', label: 'Recent median', num: true, render: (row) => (RAW_PERCENT.has(row.feature) ? `$${Intl.NumberFormat('en-US', { notation: 'compact' }).format(row.recent_median)}` : pct(row.recent_median, 1)) },
-        { key: 'median_shift_sd', label: 'Shift (SD)', num: true, render: (row) => html`<span class="${toneClass(row.median_shift_sd)}">${num(row.median_shift_sd, 2, { sign: true })}</span>` },
+        { key: 'median_shift_sd', label: 'Shift (SD)', num: true, render: (row) => num(row.median_shift_sd, 2, { sign: true }) },
       ],
     });
   },
