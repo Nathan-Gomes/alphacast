@@ -92,3 +92,10 @@ def test_the_page_is_served_with_a_hash_based_content_security_policy():
     assert "script-src 'self' 'sha256-" in policy and "unsafe-inline" not in policy.split("script-src")[1].split(";")[0]
     assert response.headers["x-content-type-options"] == "nosniff"
     assert "content-security-policy" not in client.get("/api/docs").headers
+
+
+def test_static_assets_are_revalidated_so_deploys_are_never_stale():
+    response = client.get("/assets/js/main.js")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-cache"
+    assert "etag" in response.headers

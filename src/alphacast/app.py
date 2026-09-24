@@ -93,6 +93,10 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     if request.url.path == "/":
         response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+    if request.url.path.startswith("/assets/"):
+        # File names are not content-hashed, so browsers must revalidate (cheap, via
+        # ETag) or a returning visitor could run stale scripts after a deploy.
+        response.headers["Cache-Control"] = "no-cache"
     return response
 app.mount("/assets", StaticFiles(directory=WEB_DIRECTORY), name="assets")
 registry = RunRegistry()
