@@ -17,7 +17,7 @@ export const DEFINITIONS = {
   percentile: ['Score percentile', 'Where the model\'s score for this stock sits in today\'s cross-section. 100 is the most attractive.'],
   beta: ['Beta', 'How much the sleeve moves with the equal-weight universe. Above 1 means it amplifies market moves, which lifts returns in a rising market without any stock-picking skill.'],
   alpha: ['Alpha', 'Annualised return left after removing the sleeve\'s market exposure (beta), from a regression of monthly returns on the universe.'],
-  health: ['Model health', 'Degraded if the last six months\' mean Rank IC is negative; watch if it is more than one standard error below the full history.'],
+  health: ['Model health', 'The last six months\' mean Rank IC tested against the model\'s earlier record. Degraded if it is more than two standard errors below; watch if more than one below, or below zero.'],
 };
 
 /** A label that explains itself on hover and keyboard focus. */

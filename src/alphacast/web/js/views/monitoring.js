@@ -27,7 +27,7 @@ export default {
     ctx.el.innerHTML = html`
       <div class="grid model-cards" id="cards"></div>
       <div class="grid cols-main">
-        ${raw(panel({ title: `Rolling ${window}-month Rank IC`, note: `${index.labels[model]}. The shaded band is the full-sample mean ± one standard error for a ${window}-month window; falling below it triggers “watch”, below zero triggers “degraded”.`, body: '<div id="roll-legend"></div><div id="rolling"></div>' }))}
+        ${raw(panel({ title: `Rolling ${window}-month Rank IC`, note: `${index.labels[model]}. The shaded band is the mean of the earlier folds ± one standard error for a ${window}-month window. Falling below it, or below zero, triggers “watch”; two standard errors below triggers “degraded”. A single dip is often noise.`, body: '<div id="roll-legend"></div><div id="rolling"></div>' }))}
         ${raw(panel({ title: 'Reliance drift', note: `Share of attribution over the last ${window} folds against the full history.`, body: '<div id="reliance"></div>' }))}
       </div>
       <div class="section-gap">${raw(panel({ title: 'Feature drift', note: 'Population stability index of feature values (dollar volume relative to each day\'s median): last 63 sessions against all earlier history. Under 0.10 stable, 0.10–0.25 moderate, above 0.25 shifted. Models see within-date ranks, so raw drift does not reach them directly, but it flags a market unlike most of the training data.', body: '<div id="drift"></div>', flush: true }))}</div>`;
@@ -37,7 +37,7 @@ export default {
       return `<button type="button" class="panel model-card" data-model="${id}" aria-pressed="${id === model}">
         <div class="model-card-head"><strong><span class="dot" style="background:${modelColor(id)}"></span>${escapeHtml(index.labels[id])}</strong>${statusBadge(row.status)}</div>
         <div class="model-card-value">${num(row.recent_mean_rank_ic, 3)}</div>
-        <div class="model-card-sub">Recent IC · history ${num(row.historical_mean_rank_ic, 3)} (<span class="${toneClass(row.rank_ic_change)}">${num(row.rank_ic_change, 3, { sign: true })}</span>)</div>
+        <div class="model-card-sub">Recent IC · earlier ${num(row.historical_mean_rank_ic, 3)} (<span class="${toneClass(row.rank_ic_change)}">${num(row.change_z, 1, { sign: true })} SE</span>)</div>
         <div class="model-card-sub">${pct(row.recent_positive_ic_rate, 0)} positive · turnover ${pct(row.recent_turnover, 0)}</div>
       </button>`;
     }).join('');
@@ -45,14 +45,14 @@ export default {
 
     const series = [
       { label: `Rolling ${window}M IC`, color: modelColor(model), values: rolling(ic, window) },
-      { label: 'Full-sample mean', color: 'var(--bench)', values: ic.map(() => historical), dash: true },
+      { label: 'Earlier mean', color: 'var(--bench)', values: ic.map(() => historical), dash: true },
     ];
     document.getElementById('roll-legend').innerHTML = legend(series);
     lineChart(document.getElementById('rolling'), {
       dates: periods.map((row) => row.date), series, height: 280, baseline: 0,
       band: { lower: ic.map(() => historical - se), upper: ic.map(() => historical + se), color: 'var(--bench)' },
       yFormat: (value) => value.toFixed(2), tooltipFormat: (value) => value.toFixed(3),
-      label: 'Rolling Rank IC against the full-sample mean band',
+      label: 'Rolling Rank IC against the earlier-mean band',
     });
 
     const top = importance.slice(0, 9);

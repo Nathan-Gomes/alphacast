@@ -164,7 +164,18 @@ def main(output: Path) -> None:
     def month(day: str) -> str:
         return date.fromisoformat(day).strftime("%b %Y")
 
-    degraded = sum(row["status"] == "degraded" for row in monitoring.values())
+    statuses = [row["status"] for row in monitoring.values()]
+    counts = {status: statuses.count(status) for status in ("degraded", "watch", "healthy") if status in statuses}
+    worst_z = min(row["change_z"] for row in monitoring.values())
+    words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+    if counts.get("watch") == len(statuses):
+        health_summary = (f"The monitoring view currently puts <b>all {words.get(len(statuses), len(statuses))} models on watch</b>: "
+                          f"each has a weaker last six months, but no drop exceeds {abs(worst_z):.1f} standard errors, so none is called degraded")
+    else:
+        health_summary = "The monitoring view currently shows " + ", ".join(f"<b>{n} {status}</b>" for status, n in counts.items())
+    rf_health = monitoring["random_forest"]
+    rf_status = {"watch": "on watch", "degraded": "degraded", "healthy": "healthy"}[rf_health["status"]]
+    rf_z = f"{abs(rf_health['change_z']):.1f}"
     calm = next(row for row in regimes if row["regime"] == "Expansion / low vol")
     stressed = [row for row in regimes if row["regime"].endswith("high vol")]
     stressed_folds = sum(row["folds"] for row in stressed)
@@ -321,7 +332,9 @@ def main(output: Path) -> None:
         rf_turnover=pct(rf["mean_turnover"], 0),
         rf_cost=pct(rf["annualized_cost_drag"], 2),
         rf_ir=f"{rf['information_ratio']:.2f}",
-        degraded=degraded,
+        health_summary=health_summary,
+        rf_status=rf_status,
+        rf_z=rf_z,
         calm_folds=calm["folds"],
         calm_ic=f"{calm['mean_rank_ic']:.3f}",
         stressed_folds=stressed_folds,

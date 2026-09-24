@@ -87,7 +87,7 @@ For the linear models this is exactly coefficient times centred rank. For the tr
 
 ## Monitoring
 
-- **Model health:** the mean Rank IC of the last six folds against the full sample. **Degraded** if the recent mean is negative; **watch** if it sits more than one standard error (full-sample IC s.d. / sqrt(6)) below the full-sample mean; otherwise **healthy**.
+- **Model health:** the mean Rank IC of the last six folds tested against every earlier fold, `z = (recent mean - earlier mean) / (earlier IC s.d. / sqrt(6))`. **Degraded** if `z < -2`; **watch** if `z < -1` or the recent mean is below zero; otherwise **healthy**. Monthly Rank IC has a standard deviation near 0.10, so a negative six-month mean happens often by chance: an earlier rule that called any negative recent mean "degraded" flagged all six models at once, although no drop was larger than 1.6 standard errors.
 - **Reliance drift:** the share of attribution per feature over the last six folds against the full history.
 - **Feature drift:** population stability index of feature values (dollar volume is taken relative to each day's median, since its nominal level grows with prices), last 63 sessions against all earlier history, using deciles of the reference. Under 0.10 stable, 0.10 to 0.25 moderate, above 0.25 shifted. Models see within-date ranks, so raw drift does not reach them directly, but it signals a market unlike most of the training data.
 

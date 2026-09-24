@@ -104,22 +104,29 @@ def regime_summary(periods: pd.DataFrame) -> pd.DataFrame:
 
 
 def monitoring_summary(periods: pd.DataFrame, window: int) -> pd.DataFrame:
-    """Compare recent ranking quality with the full sample and assign a declared status.
+    """Compare recent ranking quality with the model's earlier record and assign a status.
 
-    ``degraded``: the recent mean Rank IC is negative.
-    ``watch``: it sits more than one standard error below the full-sample mean.
+    The last ``window`` folds are tested against every fold before them. A monthly Rank IC
+    has a standard deviation near 0.10, so a six-month mean below zero is common by chance;
+    the status therefore depends on how many standard errors the drop is, not its sign alone.
+
+    ``degraded``: the recent mean is more than two standard errors below the earlier mean.
+    ``watch``: it is more than one standard error below, or below zero.
     ``healthy``: neither.
     """
     rows: list[dict[str, object]] = []
     for model, model_periods in periods.groupby("model", sort=False):
         ordered = model_periods.sort_values("date")
         recent = ordered.tail(window)
-        historical = float(ordered.rank_ic.mean())
+        earlier = ordered.iloc[: max(len(ordered) - window, 0)]
+        reference = earlier if len(earlier) >= 2 else ordered
+        historical = float(reference.rank_ic.mean())
         recent_ic = float(recent.rank_ic.mean())
-        standard_error = float(ordered.rank_ic.std(ddof=1) / np.sqrt(max(len(recent), 1)))
-        if recent_ic < 0:
+        standard_error = float(reference.rank_ic.std(ddof=1) / np.sqrt(max(len(recent), 1)))
+        z_score = (recent_ic - historical) / standard_error if standard_error > 0 else 0.0
+        if z_score < -2:
             status = "degraded"
-        elif recent_ic < historical - standard_error:
+        elif z_score < -1 or recent_ic < 0:
             status = "watch"
         else:
             status = "healthy"
@@ -133,6 +140,7 @@ def monitoring_summary(periods: pd.DataFrame, window: int) -> pd.DataFrame:
                 "historical_mean_rank_ic": historical,
                 "rank_ic_change": recent_ic - historical,
                 "standard_error": standard_error,
+                "change_z": float(z_score),
                 "recent_positive_ic_rate": float((recent.rank_ic > 0).mean()),
                 "recent_q1_q5_spread": float(recent.q1_q5_spread.mean()),
                 "recent_turnover": float(recent.turnover.mean()),

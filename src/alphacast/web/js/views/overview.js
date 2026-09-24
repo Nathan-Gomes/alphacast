@@ -29,7 +29,7 @@ function verdict(index, model) {
   if (health) {
     points.push(['Health', health.status === 'healthy'
       ? `${index.labels[model]} is in line with its history over the last ${health.window_folds} folds.`
-      : `${index.labels[model]} is ${health.status}: recent Rank IC ${num(health.recent_mean_rank_ic, 3)} against ${num(health.historical_mean_rank_ic, 3)}.`]);
+      : `${index.labels[model]} is ${health.status === 'watch' ? 'on watch' : health.status}: recent Rank IC ${num(health.recent_mean_rank_ic, 3)} against ${num(health.historical_mean_rank_ic, 3)} earlier, ${num(Math.abs(health.change_z), 1)} standard errors ${health.change_z < 0 ? 'lower' : 'higher'}${health.status === 'degraded' ? '' : ', within the range noise can produce'}.`]);
   }
   return points;
 }

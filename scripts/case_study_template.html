@@ -133,7 +133,7 @@
         <div class="takeaway">
           <span class="takeaway-n">3</span>
           <h3>It works in stress and fades in calm markets</h3>
-          <p>In high-volatility months ({stressed_folds} of them) Random Forest's IC averaged <b>{stressed_ic}</b>; in calm expansions ({calm_folds} months) it was <b>{calm_ic}</b>. The monitoring view currently flags <b>all {degraded} models as degraded</b>. The app shows this rather than hiding it.</p>
+          <p>In high-volatility months ({stressed_folds} of them) Random Forest's IC averaged <b>{stressed_ic}</b>; in calm expansions ({calm_folds} months) it was <b>{calm_ic}</b>. {health_summary}. The app shows this rather than hiding it.</p>
         </div>
       </div>
     </section>
@@ -222,7 +222,7 @@
           </table>
         </div>
       </div>
-      <div class="readout"><b>Most of the edge comes from volatile markets.</b> In calm expansions, the most common state, the ranking was indistinguishable from random. The last six folds average an IC of {rf_recent}, which is why the monitoring view flags the model as degraded going into the {signal} signal.</div>
+      <div class="readout"><b>Most of the edge comes from volatile markets.</b> In calm expansions, the most common state, the ranking was indistinguishable from random. The last six folds average an IC of {rf_recent}, {rf_z} standard errors below its earlier record, which is why the monitoring view has the model {rf_status} going into the {signal} signal.</div>
       <div class="chart-card">
         <p class="eyebrow" style="color:var(--muted)">Rank IC by forward horizon</p>
         {decay_svg}

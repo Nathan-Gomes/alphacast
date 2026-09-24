@@ -33,13 +33,21 @@ def test_monitoring_statuses_follow_the_declared_thresholds():
     steady = [0.05, 0.03] * 12
     healthy = monitoring_summary(_periods(steady), window=6).iloc[0]
     assert healthy.status == "healthy"
+    # A collapse many standard errors below the earlier record.
     degraded = monitoring_summary(_periods(steady[:-6] + [-0.02] * 6), window=6).iloc[0]
     assert degraded.status == "degraded"
-    # Recent IC positive but more than one standard error below the full-sample mean.
-    calm = [0.06, 0.04] * 12
-    watch = monitoring_summary(_periods(calm[:-6] + [0.005] * 6), window=6).iloc[0]
-    assert watch.recent_mean_rank_ic > 0
-    assert watch.status == "watch"
+    assert degraded.change_z < -2
+    # Noisy history: a small negative six-month mean is within noise, so only "watch".
+    noisy = [0.15, -0.09] * 12
+    dip = monitoring_summary(_periods(noisy[:-6] + [-0.01] * 6), window=6).iloc[0]
+    assert -2 < dip.change_z < 0
+    assert dip.status == "watch"
+    # Positive recent IC between one and two standard errors below the earlier record.
+    calm = [0.09, 0.03] * 12
+    slip = monitoring_summary(_periods(calm[:-6] + [0.02, 0.06] * 3), window=6).iloc[0]
+    assert slip.recent_mean_rank_ic > 0
+    assert -2 < slip.change_z < -1
+    assert slip.status == "watch"
 
 
 def test_max_drawdown_counts_the_start_as_a_peak():
