@@ -72,6 +72,13 @@ For the linear models this is exactly coefficient times centred rank. For the tr
 - **Portfolio:** an equal-weight long-only sleeve of the top 15 names, held for 20 sessions. One-way turnover times the declared basis-point cost is subtracted. Benchmark: the equal-weight universe over the same periods. The first period is treated as the starting allocation and is not charged.
 - **Regimes:** each test date is labelled with trailing information only. The 63-session universe return sets expansion or contraction. 20-session universe volatility above the training window's median sets high volatility.
 
+## Costs, sectors and consensus
+
+- **Cost sensitivity:** each period stores gross return and one-way turnover, so net returns at any cost `c` are `gross - turnover x c`. The app reports the cost at which net Sharpe falls to the universe's, and the cost at which the mean gross edge over the universe is used up.
+- **Sector cap:** an optional limit on names per sector. The sleeve takes the highest-ranked names, skipping one when its sector is already full, so it still holds the declared number of names. The cap applies to every walk-forward fold and to the live book.
+- **Within-sector skill:** for each model and sector, the Spearman correlation between score and realised outcome among that sector's names in each fold (at least four names), averaged across folds. Active weight is the sleeve's sector share minus the universe's, averaged across folds.
+- **Consensus and agreement:** consensus counts the models that place a stock in their top quintile today; agreement is the Spearman correlation between two models' live rankings.
+
 ## Monitoring
 
 - **Model health:** the mean Rank IC of the last six folds against the full sample. **Degraded** if the recent mean is negative; **watch** if it sits more than one standard error (full-sample IC s.d. / sqrt(6)) below the full-sample mean; otherwise **healthy**.

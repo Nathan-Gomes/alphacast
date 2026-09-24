@@ -16,15 +16,17 @@ It ranks. It does not forecast prices, place trades, or give investment advice.
 
 | View | Purpose |
 |---|---|
-| **Overview** | Latest signal, active model's out-of-sample record and health, generated read-out, top and bottom ranks |
-| **Screener** | Full cross-section with score percentile, model output, rank change and factor profile; search, filter, CSV export |
-| **Security** | Per-feature attribution, price path, rank history against realised outcomes, rank under every model |
-| **Portfolio** | Top-ranked sleeve at the latest close: weights, entries and exits, implied turnover and cost, sector tilts |
-| **Backtest** | Net and gross growth, drawdown, rolling active return, turnover, period table |
-| **Models** | All models on identical folds: IC, t-stat, Sharpe, turnover, cumulative IC, feature reliance |
-| **Diagnostics** | Monthly Rank IC, quintile returns, IC distribution, regime breakdown |
+| **Overview** | Latest signal, active model's out-of-sample record and health, generated read-out, top and bottom ranks, watchlist |
+| **Screener** | Full cross-section with score percentile, model output, model consensus, rank change and factor profile; search, filter, watchlist, CSV export |
+| **Security** | Per-feature attribution, price path, rank history against realised outcomes, rank under every model, sector peers |
+| **Portfolio** | Top-ranked sleeve at the latest close: weights, entries and exits, implied turnover and cost, sector allocation, factor tilts |
+| **Backtest** | Net and gross growth, drawdown, rolling active return, turnover, cost sensitivity with break-even costs, period table |
+| **Models** | All models on identical folds: IC, t-stat, Sharpe, turnover, cumulative IC, today's rank agreement, feature reliance |
+| **Diagnostics** | Monthly Rank IC, quintile returns, IC distribution, within-sector skill and tilt, regime breakdown |
 | **Monitoring** | Health status per model, rolling IC against a historical band, reliance drift, feature drift (PSI) |
-| **Runs** | Start new studies in the background (frozen snapshot, live Yahoo Finance, or synthetic), switch workspaces, export JSON |
+| **Runs** | Background studies (frozen snapshot, live Yahoo Finance, or synthetic) with time estimates and an optional sector cap; switch workspaces, export JSON |
+
+Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd> anywhere to jump to a ticker, view or model. Links keep the active model and run, and charts can be read with the arrow keys.
 
 ![Security view](docs/assets/security.png)
 
@@ -61,6 +63,10 @@ Daily adjusted prices and volume (98 stocks, 2014-2026)
 - **Attribution:** score change when a feature is set to the date's median. Exact for linear models; a local approximation for trees.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) for equations and design choices.
+
+## Data freshness
+
+A scheduled workflow (`.github/workflows/refresh-data.yml`) downloads prices every Saturday, refuses a snapshot with fewer than 95 tickers, rebuilds the default workspace, runs the tests and commits only when new sessions arrived. Add the Render deploy hook as a `RENDER_DEPLOY_HOOK` repository secret to redeploy automatically.
 
 ## Run locally
 
