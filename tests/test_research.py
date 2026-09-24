@@ -130,3 +130,12 @@ def test_neutralized_scores_are_uncorrelated_with_volatility():
     residual = neutralize(scores, vol)
     assert abs(np.corrcoef(residual, vol.rank(pct=True))[0, 1]) < 1e-9
     assert abs(np.corrcoef(scores, vol.rank(pct=True))[0, 1]) > 0.9
+
+
+def test_trailing_betas_average_to_about_one_against_the_equal_weight_universe():
+    from alphacast.features import build_panel
+    from alphacast.research import trailing_betas
+
+    betas = trailing_betas(build_panel(synthetic_prices(sessions=400, securities=20)))
+    assert len(betas) == 20
+    assert abs(betas.mean() - 1.0) < 1e-9

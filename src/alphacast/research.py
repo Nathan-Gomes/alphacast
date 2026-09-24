@@ -188,6 +188,21 @@ def _weekly_prices(prices: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def trailing_betas(panel: pd.DataFrame, sessions: int = 252) -> pd.Series:
+    """Each stock's beta to the equal-weight universe over the last ``sessions`` days.
+
+    Descriptive only: it explains the portfolio's market exposure and is not a model
+    input.
+    """
+    returns = panel.pivot(index="date", columns="ticker", values="adjusted_close").pct_change()
+    recent = returns.iloc[-sessions:]
+    market = recent.mean(axis=1)
+    variance = market.var(ddof=1)
+    if not variance or np.isnan(variance):
+        return pd.Series(dtype=float)
+    return recent.apply(lambda column: column.cov(market) / variance)
+
+
 def neutralize(scores: pd.Series, exposure: pd.Series) -> pd.Series:
     """Remove the part of today's scores explained by a stock's volatility rank.
 
@@ -467,6 +482,7 @@ def run_research(
         .adjusted_close.apply(lambda values: values.iloc[-1] / values.iloc[-2] - 1)
     )
     profiles["return_1d"] = profiles.ticker.map(one_day)
+    profiles["beta_252"] = profiles.ticker.map(trailing_betas(full_panel))
 
     return ResearchRun(
         source=source,

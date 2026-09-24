@@ -60,13 +60,13 @@ export default {
       factors.map(([key, label]) => ({ label, value: mean(holdings.map((row) => row[key])) - 50 })),
       { signed: true, format: (value) => num(value, 0, { sign: true }), color: 'var(--series-1)', negativeColor: 'var(--series-2)' },
     );
-    const raws = [['momentum_12_1', '12-1 momentum'], ['return_63', '3M return'], ['volatility_60', '60D volatility'], ['drawdown_252', '12M drawdown']];
+    const raws = [['momentum_12_1', '12-1 momentum'], ['return_63', '3M return'], ['volatility_60', '60D volatility'], ['drawdown_252', '12M drawdown'], ['beta_252', '1Y beta', (value) => num(value, 2)]];
     dataTable(document.getElementById('tilt-table'), {
-      rows: raws.map(([key, label]) => ({ label, held: median(holdings.map((row) => row[key])), universe: median(rows.map((row) => row[key])) })),
+      rows: raws.map(([key, label, format = (value) => pct(value, 1)]) => ({ label, format, held: median(holdings.map((row) => row[key])), universe: median(rows.map((row) => row[key])) })),
       columns: [
         { key: 'label', label: 'Median', sortable: false },
-        { key: 'held', label: 'Holdings', num: true, sortable: false, render: (row) => pct(row.held, 1) },
-        { key: 'universe', label: 'Universe', num: true, sortable: false, render: (row) => pct(row.universe, 1) },
+        { key: 'held', label: 'Holdings', num: true, sortable: false, render: (row) => row.format(row.held) },
+        { key: 'universe', label: 'Universe', num: true, sortable: false, render: (row) => row.format(row.universe) },
       ],
     });
 

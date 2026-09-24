@@ -49,6 +49,7 @@ export default {
       { key: 'return_1d', label: '1D', num: true, render: (row) => html`<span class="${toneClass(row.return_1d)}">${pct(row.return_1d, 2, { sign: true })}</span>` },
       { key: 'momentum_12_1', label: '12-1 mom.', num: true, render: (row) => html`<span class="${toneClass(row.momentum_12_1)}">${pct(row.momentum_12_1, 1, { sign: true })}</span>` },
       { key: 'volatility_20', label: '20D vol', num: true, render: (row) => pct(row.volatility_20, 1) },
+      { key: 'beta_252', label: 'Beta', num: true, title: definition('beta'), render: (row) => num(row.beta_252, 2) },
       { key: 'in_portfolio', label: 'Held', num: true, sort: (row) => (row.in_portfolio ? 1 : 0), render: (row) => (row.in_portfolio ? '<span class="tag">Held</span>' : '') },
     ];
 

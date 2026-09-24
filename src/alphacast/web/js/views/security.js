@@ -40,7 +40,7 @@ export default {
 
     ctx.el.innerHTML = html`
       <div class="sec-head">
-        <div><h2>${ticker} ${raw(starButton(ticker))}</h2><div class="meta">${profile.sector}</div></div>
+        <div><h2>${ticker} ${raw(starButton(ticker))}</h2><div class="meta">${profile.sector}${Number.isFinite(profile.beta_252) ? ` · 1Y beta ${num(profile.beta_252, 2)}` : ''}</div></div>
         <div><div class="price">${money(profile.price)}</div><div class="${toneClass(profile.return_1d)}">${pct(profile.return_1d, 2, { sign: true })} on the day</div></div>
         <label class="field picker"><span>Jump to security</span>
           <input id="picker" type="text" list="tickers" autocomplete="off" spellcheck="false" placeholder="Ticker" aria-label="Jump to ticker">
