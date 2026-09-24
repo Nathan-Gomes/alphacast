@@ -28,3 +28,14 @@ def test_partially_published_sessions_are_dropped():
     cleaned, dropped = drop_incomplete_sessions(partial)
     assert dropped == 1
     assert last not in set(cleaned.date)
+
+
+def test_a_late_listing_does_not_make_earlier_sessions_look_partial():
+    from alphacast.data import drop_incomplete_sessions
+
+    prices = synthetic_prices(sessions=400, securities=12)
+    ipo = prices.date.drop_duplicates().iloc[200]
+    late = prices[(prices.ticker != "SYN000") | (prices.date >= ipo)]
+    cleaned, dropped = drop_incomplete_sessions(late)
+    assert dropped == 0
+    assert cleaned.date.nunique() == prices.date.nunique()

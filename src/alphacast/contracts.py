@@ -41,6 +41,7 @@ class DataQualityReport:
     last_date: pd.Timestamp
     missing_observations: int
     dropped_sessions: int = 0
+    unavailable_tickers: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -52,6 +53,7 @@ class DataQualityReport:
             "last_date": self.last_date.date().isoformat(),
             "missing_observations": self.missing_observations,
             "dropped_sessions": self.dropped_sessions,
+            "unavailable_tickers": list(self.unavailable_tickers),
         }
 
 

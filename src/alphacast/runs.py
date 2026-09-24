@@ -106,10 +106,12 @@ def execute(request: RunRequest, progress=None) -> tuple[dict[str, object], dict
     notify(0.01, "Loading Yahoo Finance history" if request.source == "yahoo" else "Loading prices")
     prices = load_prices(request)
     if request.source != "synthetic":
+        unavailable = prices.attrs.get("unavailable_tickers", [])
         prices = prices[
             (prices.date >= pd.Timestamp(request.config.start))
             & (prices.date <= pd.Timestamp(request.config.end))
-        ]
+        ].copy()
+        prices.attrs["unavailable_tickers"] = unavailable
     run = run_research(
         prices,
         source=request.source,

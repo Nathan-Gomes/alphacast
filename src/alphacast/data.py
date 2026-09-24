@@ -69,7 +69,12 @@ def drop_incomplete_sessions(prices: pd.DataFrame, min_coverage: float = 0.9) ->
     cross-section would distort every within-date rank and sector average.
     """
     counts = prices.groupby("date").ticker.nunique()
-    keep = counts[counts >= min_coverage * counts.median()].index
+    # Compare each session with the securities already listed by then, so a recent IPO in
+    # a custom universe does not make every earlier session look partially published.
+    # Declared universes hold current constituents, so nothing delists inside a panel.
+    first_dates = prices.groupby("ticker").date.min().sort_values().to_numpy()
+    listed = first_dates.searchsorted(counts.index.to_numpy(), side="right")
+    keep = counts.index[counts.to_numpy() >= min_coverage * listed]
     return prices[prices.date.isin(keep)].reset_index(drop=True), int(len(counts) - len(keep))
 
 
@@ -81,6 +86,7 @@ def validate_price_panel(
     minimum_sessions: int = 300,
     minimum_tickers: int = 10,
     dropped_sessions: int = 0,
+    unavailable_tickers: tuple[str, ...] = (),
 ) -> DataQualityReport:
     """Reject malformed coverage before it can become a research result."""
     missing = REQUIRED_PRICE_COLUMNS - set(prices.columns)
@@ -108,6 +114,7 @@ def validate_price_panel(
         last_date=panel.date.max(),
         missing_observations=expected - len(panel),
         dropped_sessions=dropped_sessions,
+        unavailable_tickers=tuple(unavailable_tickers),
     )
 
 
@@ -146,25 +153,37 @@ def yahoo_prices(
         raise RuntimeError("Yahoo Finance returned no prices for the requested universe.")
 
     records: list[pd.DataFrame] = []
+    unavailable: list[str] = []
     for ticker in normalized:
         try:
             frame = raw[ticker] if isinstance(raw.columns, pd.MultiIndex) else raw
         except KeyError:
+            unavailable.append(ticker)
             continue
         if "Close" not in frame or "Volume" not in frame:
+            unavailable.append(ticker)
             continue
         prepared = frame[["Close", "Volume"]].dropna().rename(
             columns={"Close": "adjusted_close", "Volume": "volume"}
         )
+        if prepared.empty:
+            unavailable.append(ticker)
+            continue
         prepared["ticker"] = ticker
         prepared["sector"] = resolved_sectors[ticker]
         prepared["date"] = prepared.index
         records.append(prepared.reset_index(drop=True))
-    if not records:
-        raise RuntimeError("Yahoo Finance did not return usable close and volume fields.")
+    usable = len(normalized) - len(unavailable)
+    if usable < 10:
+        listed = ", ".join(unavailable[:12]) + (" …" if len(unavailable) > 12 else "")
+        raise ValueError(
+            f"Yahoo Finance returned prices for {usable} of {len(normalized)} tickers; a study "
+            f"needs at least ten. No data for: {listed}."
+        )
     panel = pd.concat(records, ignore_index=True)
     panel = panel[["date", "ticker", "sector", "adjusted_close", "volume"]]
     validate_price_panel(panel, source="yahoo", requested_tickers=len(normalized))
+    panel.attrs["unavailable_tickers"] = unavailable
     return panel
 
 

@@ -343,11 +343,17 @@ def run_research(
         raise ValueError(f"Unsupported models: {', '.join(sorted(unknown))}")
     if not config.models:
         raise ValueError("Select at least one model.")
+    unavailable = tuple(prices.attrs.get("unavailable_tickers", ()))
     prices, dropped = drop_incomplete_sessions(prices)
-    quality = validate_price_panel(prices, source=source, dropped_sessions=dropped)
+    quality = validate_price_panel(
+        prices, source=source, dropped_sessions=dropped, unavailable_tickers=unavailable
+    )
     report(0.02, "Building trailing features")
     full_panel = build_panel(prices, config.horizon_sessions)
     panel = research_ready(full_panel)
+    # A ranking needs a real cross-section; early dates of a custom universe can be thin.
+    breadth = panel.groupby("date").ticker.transform("size")
+    panel = panel.loc[breadth >= 10]
     folds = expanding_folds(
         panel,
         minimum_train_sessions=config.minimum_train_sessions,
