@@ -275,6 +275,15 @@ def main(output: Path) -> None:
         entry[1] *= 1 + row["benchmark_return"]
         entry[2] += 1
     full_years = {y: v[0] - v[1] for y, v in years.items() if v[2] >= 12}
+    rolling_betas = []
+    for i in range(23, len(rf_periods)):
+        window = rf_periods[i - 23 : i + 1]
+        xs = [r["benchmark_return"] for r in window]
+        ys = [r["net_return"] for r in window]
+        mx, my = sum(xs) / 24, sum(ys) / 24
+        var = sum((x - mx) ** 2 for x in xs)
+        rolling_betas.append((window[-1]["date"], sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / var))
+    peak_date, peak_beta = max(rolling_betas, key=lambda item: item[1])
     top_years = sorted(full_years, key=full_years.get, reverse=True)[:3]
     quarterly = _random_forest_variant(ws["config"]["end"], rebalance_every_folds=3)
     buffered = _random_forest_variant(ws["config"]["end"], hold_buffer=23)
@@ -333,6 +342,8 @@ def main(output: Path) -> None:
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
         rf_beta=f"{rf['beta']:.2f}",
+        peak_beta=f"{peak_beta:.1f}",
+        peak_year=peak_date[:4],
         n_ic=f"{neutral['mean_rank_ic']:.3f}",
         n_beta=f"{neutral['beta']:.2f}",
         n_alpha=pct(neutral["alpha_annualized"], 1),
