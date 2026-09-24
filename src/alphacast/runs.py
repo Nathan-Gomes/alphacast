@@ -22,6 +22,12 @@ from .universe import UNIVERSES, sectors_for
 DEFAULT_RUN_ID = "default"
 DEFAULT_RUN_FILE = "default_run.json.gz"
 MAX_RUNS = 12
+# The public instance is small; a short queue keeps one visitor from starving others.
+MAX_ACTIVE_RUNS = 3
+
+
+class QueueFull(RuntimeError):
+    """Raised when too many runs are already queued or running."""
 
 
 @dataclass
@@ -185,6 +191,11 @@ class RunRegistry:
             id=uuid.uuid4().hex[:10], name=request.name, status="queued", request=request.describe()
         )
         with self._lock:
+            active = sum(run.status in {"queued", "running"} for run in self._runs.values())
+            if active >= MAX_ACTIVE_RUNS:
+                raise QueueFull(
+                    f"{active} runs are already queued or running. Try again when one finishes."
+                )
             self._runs[record.id] = record
             self._evict()
         self._executor.submit(self._run, record, request)

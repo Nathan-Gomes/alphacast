@@ -73,3 +73,12 @@ def test_invalid_requests_are_rejected_with_a_reason():
 def test_unknown_runs_and_tickers_return_404():
     assert client.get("/api/runs/missing").status_code == 404
     assert client.get("/api/runs/default/securities/NOPE").status_code == 404
+
+
+def test_the_run_queue_refuses_work_beyond_its_limit(monkeypatch):
+    from alphacast import runs
+
+    monkeypatch.setattr(runs, "MAX_ACTIVE_RUNS", 0)
+    response = client.post("/api/runs", json={"source": "synthetic", "models": ["momentum"]})
+    assert response.status_code == 429
+    assert "queued or running" in response.json()["detail"]

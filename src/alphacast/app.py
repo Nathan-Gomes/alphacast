@@ -16,7 +16,7 @@ from . import __version__
 from .config import MODEL_LABELS, SUPPORTED_MODELS, ResearchConfig
 from .features import FEATURE_LABELS
 from .ranking import model_specs
-from .runs import DEFAULT_RUN_ID, RunRegistry, RunRequest
+from .runs import DEFAULT_RUN_ID, QueueFull, RunRegistry, RunRequest
 from .universe import UNIVERSES
 
 WEB_DIRECTORY = Path(__file__).with_name("web")
@@ -147,9 +147,10 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         hold_buffer=payload.hold_buffer,
     )
     name = payload.name.strip() or f"{payload.source.title()} · {len(models)} models"
-    record = registry.submit(
-        RunRequest(payload.source, tickers, payload.universe, config, name)
-    )
+    try:
+        record = registry.submit(RunRequest(payload.source, tickers, payload.universe, config, name))
+    except QueueFull as exc:
+        raise HTTPException(429, str(exc)) from exc
     return record.meta()
 
 
