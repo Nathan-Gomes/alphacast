@@ -82,6 +82,7 @@ class ResearchRun:
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
+    book_sizes: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     @property
     def latest_rankings(self) -> pd.DataFrame:
@@ -115,6 +116,7 @@ class ResearchRun:
             "drift": _records(self.drift),
             "sectors": _records(self.sectors),
             "decay": _records(self.decay),
+            "book_sizes": _records(self.book_sizes),
             "limits": LIMITS,
         }
 
@@ -230,6 +232,64 @@ def ensemble_attribution(members: list[tuple[pd.Series, pd.DataFrame]]) -> pd.Da
         contributions / (scores.std(ddof=0) or 1.0) for scores, contributions in members
     ]
     return sum(scaled) / len(scaled)
+
+
+BOOK_SIZES = (5, 10, 15, 20, 30)
+
+
+def book_size_sweep(
+    folds: list,
+    fold_outputs: dict[str, list[tuple[pd.Series, pd.Series, pd.Timestamp]]],
+    test_rows: dict[pd.Timestamp, pd.DataFrame],
+    config: ResearchConfig,
+) -> pd.DataFrame:
+    """Rebuild each model's sleeve at other book sizes from the same fold scores.
+
+    Nothing is refitted: only the number of names changes. Cadence, costs and the sector
+    cap are kept; a holding buffer keeps its ratio to the book size. It answers whether
+    the result depends on choosing exactly ``top_n`` names.
+    """
+    breadth = min(len(test_rows[fold.test_date]) for fold in folds)
+    sizes = sorted({size for size in (*BOOK_SIZES, config.top_n) if size <= breadth // 2})
+    rows: list[dict[str, object]] = []
+    for model_name, outputs in fold_outputs.items():
+        for size in sizes:
+            buffer = (
+                max(size + 1, round(config.hold_buffer * size / config.top_n))
+                if config.hold_buffer
+                else None
+            )
+            weights: pd.Series | None = None
+            net, benchmark, turnover = [], [], []
+            for fold_index, (fold, (scores, _, _)) in enumerate(zip(folds, outputs)):
+                test = test_rows[fold.test_date]
+                if weights is not None and fold_index % max(config.rebalance_every_folds, 1):
+                    step = hold_portfolio(test, weights)
+                else:
+                    step, weights = top_ranked_portfolio(
+                        test, scores, weights, top_n=size,
+                        transaction_cost_bps=config.transaction_cost_bps,
+                        max_per_sector=config.max_per_sector, hold_buffer=buffer,
+                    )
+                net.append(step.net_return)
+                benchmark.append(step.benchmark_return)
+                turnover.append(step.turnover)
+            net_series, bench_series = pd.Series(net), pd.Series(benchmark)
+            years = len(net) / 12
+            annualized = float((1 + net_series).prod() ** (1 / years) - 1)
+            annualized_benchmark = float((1 + bench_series).prod() ** (1 / years) - 1)
+            deviation = float(net_series.std(ddof=1))
+            rows.append(
+                {
+                    "model": model_name,
+                    "top_n": size,
+                    "net_sharpe": float(np.sqrt(12) * net_series.mean() / deviation) if deviation else 0.0,
+                    "annualized_net_return": annualized,
+                    "annualized_active_return": annualized - annualized_benchmark,
+                    "mean_turnover": float(np.mean(turnover)),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def run_research(
@@ -507,6 +567,7 @@ def run_research(
         weekly_prices=_weekly_prices(prices),
         signal_date=signal_date,
         last_rebalance=folds[-1].test_date,
+        book_sizes=book_size_sweep(folds, fold_outputs, test_rows, config),
     )
 
 

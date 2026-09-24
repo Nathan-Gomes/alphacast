@@ -48,7 +48,7 @@ Three things, in one repository.
 | **Screener** | Full cross-section with score percentile, model output, model consensus, rank change and factor profile; search, filter, watchlist, CSV export |
 | **Security** | One-sentence explanation of the rank, per-feature attribution, price path, rank history against realised outcomes, rank under every model, sector rank and peers |
 | **Portfolio** | Top-ranked sleeve at the latest close: weights, entries and exits, implied turnover and cost, sector allocation, factor tilts |
-| **Backtest** | Net and gross growth, drawdown, rolling active return, turnover, cost sensitivity with break-even costs, period table |
+| **Backtest** | Net and gross growth, drawdown, rolling active return, turnover, cost sensitivity with break-even costs, book-size robustness (5 to 30 names), period table |
 | **Models** | All models on identical folds: IC, t-stat, Holm-adjusted p-value, Sharpe, turnover, cumulative IC, today's rank agreement, feature reliance, declared specifications |
 | **Diagnostics** | Monthly Rank IC, quintile returns, IC distribution, signal decay across horizons, within-sector skill and tilt, regime breakdown |
 | **Monitoring** | Health status per model (recent IC tested against the earlier record in standard errors), rolling IC against a historical band, reliance drift, feature drift (PSI) |
@@ -73,7 +73,7 @@ Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd> anywhere to jump to a 
 | Momentum 12-1 (baseline) | 0.006 | 0.37 | 1.22 | 25% |
 | Equal-weight universe | | | 1.09 | |
 
-Random Forest has the only t-statistic above 2 (p = 0.018), but adjusted for comparing six models its p-value is 0.11: suggestive, not conclusive. Its sleeve also has a beta of 1.30 to the universe; after removing that exposure its alpha is about 6% a year (t = 1.7), no larger than momentum's. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its earlier record, so the monitoring view puts all six on watch; none of the drops is larger than 1.6 standard errors, so none counts as degraded yet. Because Random Forest was singled out after seeing the results, the ensemble, fixed in advance, is the fairer estimate of what machine learning adds here. The signal is modest and it is not stationary.
+Random Forest has the only t-statistic above 2 (p = 0.018), but adjusted for comparing six models its p-value is 0.11: suggestive, not conclusive. Its sleeve also has a beta of 1.30 to the universe; after removing that exposure its alpha is about 6% a year (t = 1.7), no larger than momentum's. The result is not an artefact of holding 15 names: from 5 to 30 names its net Sharpe stays between 1.15 and 1.28, and active return rises as the book concentrates. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its earlier record, so the monitoring view puts all six on watch; none of the drops is larger than 1.6 standard errors, so none counts as degraded yet. Because Random Forest was singled out after seeing the results, the ensemble, fixed in advance, is the fairer estimate of what machine learning adds here. The signal is modest and it is not stationary.
 
 ## How it works
 

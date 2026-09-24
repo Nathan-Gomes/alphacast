@@ -139,3 +139,15 @@ def test_trailing_betas_average_to_about_one_against_the_equal_weight_universe()
     betas = trailing_betas(build_panel(synthetic_prices(sessions=400, securities=20)))
     assert len(betas) == 20
     assert abs(betas.mean() - 1.0) < 1e-9
+
+
+def test_book_size_sweep_reproduces_the_configured_sleeve():
+    config = ResearchConfig(models=("momentum", "ridge"), minimum_train_sessions=252, top_n=5)
+    run = run_research(synthetic_prices(sessions=700, securities=24), source="synthetic", config=config)
+    books = run.book_sizes
+    # 24 names allow books up to 12: sizes 5 and 10, which include the configured 5.
+    assert sorted(books.top_n.unique()) == [5, 10]
+    for model, summary in run.summaries.set_index("model").iterrows():
+        configured = books.loc[(books.model == model) & (books.top_n == 5)].iloc[0]
+        assert abs(configured.net_sharpe - summary.net_sharpe) < 1e-9
+        assert abs(configured.mean_turnover - summary.mean_turnover) < 1e-9

@@ -46,6 +46,10 @@ export default {
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}
       </div>
       <div class="section-gap">${raw(panel({ title: 'Cost sensitivity', note: 'Net results rebuilt from gross returns and turnover at any one-way trading cost. The benchmark is untraded.', actions: '<label class="field compact"><span>Cost</span><input id="cost-slider" type="range" min="0" max="100" step="1" aria-label="One-way cost in basis points"><output id="cost-value" class="mono" style="min-width:56px;text-align:right"></output></label>', body: '<div class="grid cols-main"><div><div id="cost-legend"></div><div id="cost-chart"></div></div><div id="cost-readout"></div></div>' }))}</div>
+      <div class="grid cols-2 section-gap" id="book-row">
+        ${raw(panel({ title: 'Book size', note: `The same fold scores rebuilt as sleeves of other sizes, with the same cadence and costs. Nothing is refitted. The configured size is ${index.ws.config.top_n}.`, body: '<div class="table-wrap" id="book-table"></div>', flush: true }))}
+        ${raw(panel({ title: 'Net Sharpe by book size, every model', note: 'A result that only holds at one size is fragile. The universe\'s net Sharpe is the reference.', body: '<div class="table-wrap" id="book-matrix"></div>', flush: true }))}
+      </div>
       <div class="section-gap">${raw(panel({ title: 'Rolling 24-month beta', note: 'Regression of the sleeve\'s monthly net returns on the universe over the trailing two years. Above 1 means the sleeve amplified market moves in that window.', body: '<div id="beta-legend"></div><div id="beta"></div>' }))}</div>
       <div class="section-gap">${raw(panel({ title: 'Calendar-year returns', note: 'Monthly net returns compounded within each calendar year. Partial first and last years are marked.', body: '<div id="years-chart"></div><div class="table-wrap section-gap" id="years"></div>' }))}</div>
       <div class="grid cols-2 section-gap">
@@ -203,6 +207,40 @@ export default {
       { key: 'regime', label: 'Regime', render: (row) => html`<span class="muted">${row.regime}</span>` },
     ];
     const table = dataTable(document.getElementById('periods'), { rows: recent, columns });
+
+    const books = index.ws.book_sizes || [];
+    document.getElementById('book-row').hidden = !books.length;
+    if (books.length) {
+      const configured = index.ws.config.top_n;
+      dataTable(document.getElementById('book-table'), {
+        rows: books.filter((row) => row.model === model),
+        sortKey: 'top_n', sortDir: 'asc',
+        rowClass: (row) => (row.top_n === configured ? 'selected' : ''),
+        columns: [
+          { key: 'top_n', label: 'Names', num: true },
+          { key: 'net_sharpe', label: 'Net Sharpe', num: true, render: (row) => num(row.net_sharpe, 2) },
+          { key: 'annualized_net_return', label: 'Annualised, net', num: true, render: (row) => pct(row.annualized_net_return, 1) },
+          { key: 'annualized_active_return', label: 'Active a year', num: true, render: (row) => html`<span class="${toneClass(row.annualized_active_return)}">${pct(row.annualized_active_return, 1, { sign: true })}</span>` },
+          { key: 'mean_turnover', label: 'Turnover', num: true, render: (row) => pct(row.mean_turnover, 0) },
+        ],
+      });
+      const sizes = [...new Set(books.map((row) => row.top_n))].sort((a, b) => a - b);
+      const lookup = Object.fromEntries(books.map((row) => [`${row.model}|${row.top_n}`, row.net_sharpe]));
+      dataTable(document.getElementById('book-matrix'), {
+        rows: index.models.map((id) => ({ model: id, label: index.labels[id], ...Object.fromEntries(sizes.map((size) => [`n${size}`, lookup[`${id}|${size}`]])) })),
+        rowClass: (row) => (row.model === model ? 'selected' : ''),
+        onRowClick: (row) => ctx.setModel(row.model),
+        columns: [
+          { key: 'label', label: 'Model', render: (row) => html`<span class="dot" style="background:${raw(modelColor(row.model))}"></span>${row.label}` },
+          ...sizes.map((size) => ({
+            key: `n${size}`, label: `${size}`, num: true,
+            title: `Net Sharpe with ${size} names`,
+            render: (row) => html`<span class="${row[`n${size}`] > s.benchmark_sharpe ? 'pos' : 'muted'}">${num(row[`n${size}`], 2)}</span>`,
+          })),
+        ],
+      });
+      document.getElementById('book-matrix').insertAdjacentHTML('beforeend', html`<p class="note table-note">Green: above the universe's ${num(s.benchmark_sharpe, 2)}. Select a row to make that model active.</p>`);
+    }
     document.getElementById('csv').addEventListener('click', () => downloadFile(`alphacast-${model}-backtest.csv`, toCsv(table.rows(), [
       { key: 'date', label: 'date' }, { key: 'gross_return', label: 'gross_return' }, { key: 'net_return', label: 'net_return' },
       { key: 'benchmark_return', label: 'benchmark_return' }, { key: 'turnover', label: 'turnover' },

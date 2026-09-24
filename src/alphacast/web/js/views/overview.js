@@ -23,6 +23,13 @@ export function verdict(index, model) {
   if (baseline && leader !== 'momentum') {
     points.push(['After costs', `Net Sharpe ${num(best.net_sharpe, 2)} against ${num(baseline.net_sharpe, 2)} for momentum and ${num(best.benchmark_sharpe, 2)} for the universe, at ${pct(best.mean_turnover, 0)} monthly turnover.`]);
   }
+  const books = (index.ws.book_sizes || []).filter((row) => row.model === leader).sort((a, b) => a.top_n - b.top_n);
+  if (books.length > 2) {
+    const sharpes = books.map((row) => row.net_sharpe);
+    const low = Math.min(...sharpes);
+    const concentrated = books[0].annualized_active_return > books.at(-1).annualized_active_return;
+    points.push(['Robustness', `Net Sharpe ${num(low, 2)} to ${num(Math.max(...sharpes), 2)} from ${books[0].top_n} to ${books.at(-1).top_n} names${low > best.benchmark_sharpe ? ', above the universe at every size' : ''}; ${concentrated ? 'active return rises as the book concentrates, as it should if the ranking is informative.' : 'active return does not rise as the book concentrates, so the top of the ranking is not where the edge is.'}`]);
+  }
   if (Number.isFinite(best.beta)) {
     points.push(['Exposure', `Beta ${num(best.beta, 2)} to the universe; alpha after that is ${pct(best.alpha_annualized, 1)} a year (t = ${num(best.alpha_t_stat, 1)}).`]);
   }
