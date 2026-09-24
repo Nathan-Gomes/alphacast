@@ -5,24 +5,39 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
+SUPPORTED_MODELS = ("momentum", "ridge", "elastic_net", "random_forest", "gradient_boosting")
+
+MODEL_LABELS = {
+    "momentum": "Momentum 12-1",
+    "ridge": "Ridge",
+    "elastic_net": "Elastic Net",
+    "random_forest": "Random Forest",
+    "gradient_boosting": "Gradient Boosting",
+}
+
 
 @dataclass(frozen=True)
 class ResearchConfig:
     """Parameters that materially affect an AlphaCast research conclusion."""
 
-    start: str = "2017-01-01"
+    start: str = "2014-01-01"
     end: str = field(default_factory=lambda: datetime.now(timezone.utc).date().isoformat())
     horizon_sessions: int = 20
     minimum_train_sessions: int = 504
     embargo_sessions: int = 20
+    # Consecutive 20-session labels overlap by 19 sessions, so daily rows are mostly
+    # duplicates of each other. Training keeps every fifth session, counted back from
+    # the embargo boundary, which is faster and closer to independent observations.
+    train_stride_sessions: int = 5
+    # Models are refitted every third monthly fold and score every month in between with
+    # the most recent fit. A stale fit only uses older data, so it cannot leak.
+    refit_every_folds: int = 3
     rebalance: str = "monthly"
-    top_n: int = 10
+    top_n: int = 15
     transaction_cost_bps: float = 10.0
-    models: tuple[str, ...] = ("momentum", "ridge", "elastic_net", "random_forest")
+    monitoring_window: int = 6
+    models: tuple[str, ...] = SUPPORTED_MODELS
     random_seed: int = 17
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
-
-
-SUPPORTED_MODELS = ("momentum", "ridge", "elastic_net", "random_forest")

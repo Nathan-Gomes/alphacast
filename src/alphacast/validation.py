@@ -27,3 +27,19 @@ def expanding_folds(
 def training_rows(panel: pd.DataFrame, fold: WalkForwardFold) -> pd.DataFrame:
     """Rows ending before the embargo boundary; later labels are never in training."""
     return panel.loc[panel.date <= fold.train_end].copy()
+
+
+def sampled_training_rows(
+    panel: pd.DataFrame, train_end: pd.Timestamp, stride_sessions: int
+) -> pd.DataFrame:
+    """Training rows on every ``stride_sessions``-th date, counted back from ``train_end``.
+
+    The most recent permissible date is always kept, so thinning never moves the
+    embargo boundary.
+    """
+    if stride_sessions < 1:
+        raise ValueError("Training stride must be at least one session.")
+    dates = pd.DatetimeIndex(panel.date.unique()).sort_values()
+    eligible = dates[dates <= train_end]
+    kept = eligible[::-1][::stride_sessions]
+    return panel.loc[panel.date.isin(kept)].copy()

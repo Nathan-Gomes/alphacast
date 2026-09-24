@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphacast"
-version = "0.1.0"
+version = "1.0.0"
 description = "Walk-forward systematic equity ranking research"
 requires-python = ">=3.10"
 dependencies = [
@@ -33,4 +33,4 @@ line-length = 100
 where = ["src"]
 
 [tool.setuptools.package-data]
-alphacast = ["web/*.html", "web/*.js", "web/*.css"]
+alphacast = ["web/*.html", "web/*.svg", "web/*.js", "web/**/*.js", "web/*.css", "snapshots/*.gz"]

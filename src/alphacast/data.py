@@ -2,12 +2,34 @@
 
 from __future__ import annotations
 
+from importlib import resources
+
 import numpy as np
 import pandas as pd
 
 from .contracts import DataQualityReport
 
 REQUIRED_PRICE_COLUMNS = {"date", "ticker", "sector", "adjusted_close", "volume"}
+SNAPSHOT_FILE = "us_large_cap_prices.csv.gz"
+
+
+def snapshot_prices(tickers: list[str] | None = None) -> pd.DataFrame:
+    """Load the frozen Yahoo Finance snapshot that ships with the package.
+
+    The snapshot makes the default workspace reproducible and available without a
+    network call. ``scripts/refresh_snapshot.py`` regenerates it.
+    """
+    with resources.files("alphacast.snapshots").joinpath(SNAPSHOT_FILE).open("rb") as handle:
+        panel = pd.read_csv(handle, compression="gzip", parse_dates=["date"])
+    if tickers:
+        wanted = {ticker.upper() for ticker in tickers}
+        missing = wanted - set(panel.ticker)
+        if missing:
+            raise ValueError(
+                "Not in the frozen snapshot: " + ", ".join(sorted(missing)) + ". Use Yahoo Finance."
+            )
+        panel = panel[panel.ticker.isin(wanted)]
+    return panel.reset_index(drop=True)
 
 
 def synthetic_prices(
