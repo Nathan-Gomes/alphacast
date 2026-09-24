@@ -33,4 +33,4 @@ line-length = 100
 where = ["src"]
 
 [tool.setuptools.package-data]
-alphacast = ["web/*.html", "web/*.svg", "web/*.js", "web/**/*.js", "web/*.css", "snapshots/*.gz"]
+alphacast = ["web/*.html", "web/*.svg", "web/*.png", "web/*.js", "web/**/*.js", "web/*.css", "snapshots/*.gz"]
