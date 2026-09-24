@@ -154,13 +154,20 @@ def population_stability(reference: pd.Series, recent: pd.Series, bins: int = 10
     return float(np.sum((actual - expected) * np.log(actual / expected)))
 
 
+NOMINAL_FEATURES = ("dollar_volume_20",)
+
+
 def feature_drift(panel: pd.DataFrame, recent_sessions: int = 63) -> pd.DataFrame:
     """Raw feature distributions over the last quarter compared with all prior history.
 
     Models see within-date ranks, so a drifting raw level does not reach them directly.
     Drift still matters: it says today's market looks unlike most training data.
     """
-    complete = panel.dropna(subset=FEATURE_COLUMNS)
+    complete = panel.dropna(subset=FEATURE_COLUMNS).copy()
+    # Dollar volume grows with prices over a decade, so its raw level always "drifts".
+    # Measure it relative to each day's median instead: that is relative liquidity.
+    for feature in NOMINAL_FEATURES:
+        complete[feature] = complete[feature] / complete.groupby("date")[feature].transform("median")
     dates = pd.DatetimeIndex(complete.date.unique()).sort_values()
     cutoff = dates[-min(recent_sessions, len(dates))]
     reference = complete.loc[complete.date < cutoff]
@@ -181,6 +188,7 @@ def feature_drift(panel: pd.DataFrame, recent_sessions: int = 63) -> pd.DataFram
                 if spread > 0
                 else 0.0,
                 "status": "shifted" if psi >= 0.25 else "moderate" if psi >= 0.1 else "stable",
+                "relative_to_date_median": feature in NOMINAL_FEATURES,
             }
         )
     return pd.DataFrame(rows).sort_values("psi", ascending=False)

@@ -64,3 +64,17 @@ def test_market_exposure_recovers_a_known_beta_and_alpha():
     assert abs(exposure["beta"] - 1.3) < 0.01
     assert abs(exposure["alpha_annualized"] - 0.024) < 0.003
     assert exposure["alpha_t_stat"] > 10
+
+
+def test_nominal_growth_in_dollar_volume_is_not_reported_as_drift():
+    from alphacast.data import synthetic_prices
+    from alphacast.diagnostics import feature_drift
+    from alphacast.features import build_panel
+
+    prices = synthetic_prices(sessions=500, securities=20)
+    # Inflate every volume steadily over time: relative liquidity is unchanged.
+    growth = prices.date.rank(method="dense") / prices.date.nunique()
+    prices["volume"] = (prices.volume * (1 + 3 * growth)).round()
+    drift = feature_drift(build_panel(prices)).set_index("feature")
+    assert drift.at["dollar_volume_20", "psi"] < 0.1
+    assert drift.at["dollar_volume_20", "relative_to_date_median"]
