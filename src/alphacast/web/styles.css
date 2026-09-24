@@ -402,3 +402,7 @@ kbd { font: 500 11px var(--mono); padding: 1px 5px; border-radius: 4px; border: 
 .palette .palette-empty { color: var(--muted); cursor: default; }
 .palette-hint { margin: 0; padding: 8px 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
 @media (max-width: 1180px) { .search-button span, .search-button kbd { display: none; } }
+.consensus { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.consensus .dots { display: inline-flex; gap: 2px; }
+.consensus .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); }
+.consensus .dots i.on { background: var(--accent); }

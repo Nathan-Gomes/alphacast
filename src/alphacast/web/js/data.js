@@ -41,6 +41,26 @@ export function leadingModel(index) {
   return [...index.models].sort((a, b) => index.summaries[b].mean_rank_ic - index.summaries[a].mean_rank_ic)[0];
 }
 
+/** How many models put each ticker in their top quintile today. */
+export function consensus(index) {
+  const counts = {};
+  index.models.forEach((model) => (index.live[model] || []).forEach((row) => {
+    counts[row.ticker] = (counts[row.ticker] || 0) + (row.quintile === 1 ? 1 : 0);
+  }));
+  return counts;
+}
+
+/** Spearman correlation between two models' live rankings. */
+export function rankAgreement(index, a, b) {
+  const rankA = Object.fromEntries((index.live[a] || []).map((row) => [row.ticker, row.rank]));
+  const pairs = (index.live[b] || []).filter((row) => rankA[row.ticker] !== undefined).map((row) => [rankA[row.ticker], row.rank]);
+  const n = pairs.length;
+  if (n < 3) return NaN;
+  const d2 = pairs.reduce((sum, [x, y]) => sum + (x - y) ** 2, 0);
+  return 1 - (6 * d2) / (n * (n * n - 1));
+}
+
 export function liveRows(index, model) {
-  return (index.live[model] || []).map((row) => ({ ...index.profiles[row.ticker], ...row }));
+  const agree = index.consensus || (index.consensus = consensus(index));
+  return (index.live[model] || []).map((row) => ({ ...index.profiles[row.ticker], ...row, consensus: agree[row.ticker] || 0 }));
 }

@@ -41,3 +41,9 @@ export function panel({ title, note = '', body = '', actions = '', id = '', flus
     <div class="panel-body${flush ? ' flush table-wrap' : ''}">${body}</div>
   </section>`;
 }
+
+/** "3/5" with dots, so agreement reads at a glance. */
+export function consensusCell(count, total) {
+  const dots = Array.from({ length: total }, (_, i) => `<i class="${i < count ? 'on' : ''}"></i>`).join('');
+  return `<span class="consensus" title="${count} of ${total} models rank it in the top quintile"><span class="dots" aria-hidden="true">${dots}</span>${count}/${total}</span>`;
+}

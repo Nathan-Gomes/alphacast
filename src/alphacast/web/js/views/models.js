@@ -1,5 +1,5 @@
 import { legend, lineChart } from '../charts.js';
-import { BENCH_COLOR, modelColor } from '../data.js';
+import { BENCH_COLOR, modelColor, rankAgreement } from '../data.js';
 import { cumulative, escapeHtml, html, num, pct, raw } from '../format.js';
 import { dataTable } from '../table.js';
 import { panel, statusBadge } from './parts.js';
@@ -21,6 +21,19 @@ function heatGrid(index) {
     ${cells}</div></div>`;
 }
 
+function agreementGrid(index) {
+  const ids = index.models;
+  const cells = ids.map((row) => `
+    <div class="rowhead"><span class="dot" style="background:${modelColor(row)}"></span>${escapeHtml(index.labels[row])}</div>
+    ${ids.map((col) => {
+      const rho = rankAgreement(index, row, col);
+      const shade = rho > 0.8 ? 3 : rho > 0.5 ? 2 : rho > 0.2 ? 1 : 0;
+      return `<div class="cell s${shade}" title="${escapeHtml(index.labels[row])} vs ${escapeHtml(index.labels[col])}: Spearman ${num(rho, 2)}">${num(rho, 2)}</div>`;
+    }).join('')}`).join('');
+  return `<div class="table-wrap"><div class="heatgrid" style="grid-template-columns:150px repeat(${ids.length}, minmax(56px, 1fr));min-width:${150 + ids.length * 60}px">
+    <div></div>${ids.map((id) => `<div class="colhead">${escapeHtml(index.labels[id])}</div>`).join('')}${cells}</div></div>`;
+}
+
 export default {
   title: 'Models',
   subtitle: () => 'Every model on the identical walk-forward sequence, costs and portfolio rule',
@@ -36,6 +49,7 @@ export default {
         ${raw(panel({ title: 'Cumulative Rank IC', note: 'Sum of monthly Rank IC. A steady upward slope is a persistent signal; a flat stretch is a period without skill.', body: '<div id="ic-legend"></div><div id="ic"></div>' }))}
         ${raw(panel({ title: 'Net growth by model', note: 'Top-ranked sleeve after costs, against the equal-weight universe.', body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
       </div>
+      <div class="section-gap">${raw(panel({ title: 'How much the models agree today', note: 'Spearman correlation between each pair of models\' rankings at the latest close. Low agreement means the models are finding different stocks, not the same bet in different clothes.', body: '<div id="agreement"></div>' }))}</div>
       <div class="section-gap">${raw(panel({ title: 'What each model relies on', note: 'Average share of attribution per feature across folds (percent). Reliance describes the model, not causality.', body: '<div id="heat"></div>' }))}</div>`;
 
     dataTable(document.getElementById('compare'), {
@@ -78,5 +92,6 @@ export default {
       label: 'Net growth of one dollar by model',
     });
     document.getElementById('heat').innerHTML = heatGrid(index);
+    document.getElementById('agreement').innerHTML = agreementGrid(index);
   },
 };
