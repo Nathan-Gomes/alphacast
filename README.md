@@ -37,13 +37,14 @@ Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd> anywhere to jump to a 
 | Model | Mean Rank IC | t-stat | Net Sharpe | Turnover / month |
 |---|---:|---:|---:|---:|
 | Random Forest | 0.024 | 2.41 | 1.24 | 41% |
+| Ensemble (declared in advance) | 0.018 | 1.64 | 1.07 | 42% |
 | Gradient Boosting | 0.010 | 0.97 | 1.06 | 57% |
 | Elastic Net | 0.010 | 0.80 | 0.90 | 35% |
 | Ridge | 0.010 | 0.75 | 0.80 | 46% |
 | Momentum 12-1 (baseline) | 0.006 | 0.37 | 1.22 | 25% |
 | Equal-weight universe | | | 1.09 | |
 
-Random Forest is the only model with a mean IC statistically distinguishable from zero. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its long-run record, and the monitoring view flags all five as degraded. The signal is modest and it is not stationary.
+Random Forest is the only model with a mean IC statistically distinguishable from zero. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its long-run record, and the monitoring view flags all six as degraded. Because Random Forest was singled out after seeing the results, the ensemble, fixed in advance, is the fairer estimate of what machine learning adds here. The signal is modest and it is not stationary.
 
 ## How it works
 
@@ -53,7 +54,7 @@ Daily adjusted prices and volume (98 stocks, 2014-2026)
 -> 14 trailing features, rank-normalised within each date
 -> target: next 20-session return minus the stock's sector return
 -> monthly expanding-window folds, 20-session embargo
--> Momentum · Ridge · Elastic Net · Random Forest · Gradient Boosting
+-> Momentum · Ridge · Elastic Net · Random Forest · Gradient Boosting · Ensemble
 -> Rank IC, quintiles, top-15 sleeve net of costs, regimes
 -> live scoring of the latest close, attribution, drift and health checks
 ```

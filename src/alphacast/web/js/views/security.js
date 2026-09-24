@@ -45,7 +45,7 @@ export default {
       <div class="kpis">
         <div class="kpi"><div class="label">Rank · ${index.labels[model]}</div><div class="value">${live.rank} <span class="muted" style="font-size:14px">/ ${total}</span></div><div class="sub">Quintile Q${live.quintile}</div></div>
         <div class="kpi"><div class="label">Score percentile</div><div class="value">${num(live.percentile, 0)}</div><div class="sub">${isNum(live.previous_rank) ? `Rank ${live.previous_rank} at last rebalance` : 'Unranked at last rebalance'}</div></div>
-        <div class="kpi"><div class="label">Model output</div><div class="value ${toneClass(live.predicted_relative_return)}">${model === 'momentum' ? '—' : pct(live.predicted_relative_return, 2, { sign: true })}</div><div class="sub">Predicted 20-session return vs sector</div></div>
+        <div class="kpi"><div class="label">Model output</div><div class="value ${toneClass(live.predicted_relative_return)}">${model === 'momentum' ? '—' : pct(live.predicted_relative_return, 2, { sign: true })}</div><div class="sub">${model === 'ensemble' ? 'Average rank of the member models' : 'Predicted 20-session return vs sector'}</div></div>
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${live.in_portfolio ? 'Held' : 'Not held'}</div><div class="sub">${live.in_portfolio ? `${pct(live.weight, 1)} weight${live.was_held ? '' : ' · entering'}` : live.was_held ? 'Exiting at this signal' : `Top ${index.ws.config.top_n} are held`}</div></div>
       </div>
       <div class="grid cols-2">
@@ -117,14 +117,17 @@ export default {
     });
 
     const attribution = [...(detail.attribution[model] || [])].sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
-    const scale = model === 'momentum' ? 100 : 10_000;
+    // Attribution units differ by model: percentile points, basis points, or for the
+    // ensemble, standard deviations of each member's score.
+    const scale = model === 'momentum' ? 100 : model === 'ensemble' ? 1 : 10_000;
+    const unitDigits = model === 'ensemble' ? 2 : model === 'momentum' ? 0 : 1;
     document.getElementById('attribution').innerHTML = attribution.every((row) => row.contribution === 0)
       ? '<p class="empty">No feature moves this score.</p>'
       : hbars(attribution.slice(0, 10).map((row) => ({
         label: index.featureLabels[row.feature], value: row.contribution * scale,
         title: `${index.featureLabels[row.feature]}: ${featureValue(row.feature, row.value)} (${num(row.percentile, 0)} pct.)`,
-      })), { signed: true, format: (value) => `${value > 0 ? '+' : ''}${value.toFixed(model === 'momentum' ? 0 : 1)}`, color: 'var(--series-1)', negativeColor: 'var(--series-2)' })
-        + `<p class="note">Units: ${model === 'momentum' ? 'percentile points of the momentum score' : 'basis points of predicted relative return'}. ${model === 'ridge' || model === 'elastic_net' ? 'For linear models this decomposition is exact.' : model === 'momentum' ? 'The baseline uses one input by design.' : 'For tree models it is a local approximation that ignores interactions.'}</p>`;
+      })), { signed: true, format: (value) => num(value, unitDigits, { sign: true }), color: 'var(--series-1)', negativeColor: 'var(--series-2)' })
+        + `<p class="note">Units: ${{ momentum: 'percentile points of the momentum score', ensemble: 'standard deviations of each member model\'s score, averaged across members' }[model] || 'basis points of predicted relative return'}. ${model === 'ridge' || model === 'elastic_net' ? 'For linear models this decomposition is exact.' : model === 'momentum' ? 'The baseline uses one input by design.' : model === 'ensemble' ? 'Each member is explained separately, then combined.' : 'For tree models it is a local approximation that ignores interactions.'}</p>`;
 
     const past = detail.history[model] || [];
     document.getElementById('rank-legend').innerHTML = legend([{ label: 'Score percentile', color: modelColor(model) }]);
@@ -156,7 +159,7 @@ export default {
         { key: 'label', label: 'Feature' },
         { key: 'value', label: 'Value', num: true, render: (row) => featureValue(row.feature, row.value) },
         { key: 'percentile', label: 'Universe pct.', num: true, render: (row) => heatCell(row.percentile) },
-        { key: 'contribution', label: 'Contribution', num: true, sort: (row) => row.contribution, render: (row) => html`<span class="${toneClass(row.contribution)}">${num(row.contribution * scale, 1, { sign: true })}</span>` },
+        { key: 'contribution', label: 'Contribution', num: true, sort: (row) => row.contribution, render: (row) => html`<span class="${toneClass(row.contribution)}">${num(row.contribution * scale, unitDigits, { sign: true })}</span>` },
       ],
     });
   },

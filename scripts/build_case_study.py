@@ -25,6 +25,7 @@ LABELS = {
     "elastic_net": "Elastic Net",
     "random_forest": "Random Forest",
     "gradient_boosting": "Gradient Boosting",
+    "ensemble": "Ensemble",
 }
 COLORS = {  # same fixed categorical order as the app
     "momentum": "#2a78d6",
@@ -32,6 +33,7 @@ COLORS = {  # same fixed categorical order as the app
     "elastic_net": "#1baf7a",
     "random_forest": "#c98500",
     "gradient_boosting": "#e87ba4",
+    "ensemble": "#4a3aa7",
 }
 
 
@@ -158,7 +160,7 @@ def main(output: Path) -> None:
     ]
     growth_svg = line_chart(growth, dates, y_format=lambda v: f"${v:g}", label="Growth of one dollar: Random Forest and momentum top-15 sleeves net of costs against the equal-weight universe", log=True)
 
-    order = ["random_forest", "gradient_boosting", "elastic_net", "ridge", "momentum"]
+    order = [m for m in ["random_forest", "ensemble", "gradient_boosting", "elastic_net", "ridge", "momentum"] if m in summaries]
     ic_series = []
     for model in order:
         total, values = 0.0, []
@@ -172,7 +174,11 @@ def main(output: Path) -> None:
     for model in order:
         s = summaries[model]
         cls = ' class="win"' if model == "random_forest" else ""
-        tag = '<span class="tag">Only significant</span>' if model == "random_forest" else ' <span style="color:#a2a5a8">(baseline)</span>' if model == "momentum" else ""
+        tag = {
+            "random_forest": '<span class="tag">Only significant</span>',
+            "momentum": ' <span style="color:#a2a5a8">(baseline)</span>',
+            "ensemble": ' <span style="color:#a2a5a8">(declared in advance)</span>',
+        }.get(model, "")
         rows_html.append(
             f"<tr{cls}><td>{LABELS[model]}{tag}</td><td>{s['mean_rank_ic']:.3f}</td><td>{s['ic_t_stat']:.2f}</td>"
             f"<td>{pct(s['positive_ic_rate'], 0)}</td><td>{pct(s['mean_q1_q5_spread'], 2)}</td><td>{s['net_sharpe']:.2f}</td>"
@@ -277,6 +283,9 @@ def main(output: Path) -> None:
         top_sector=top_sector["sector"] if top_sector else "",
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
+        ens_ic=f"{summaries['ensemble']['mean_rank_ic']:.3f}" if "ensemble" in summaries else "n/a",
+        ens_t=f"{summaries['ensemble']['ic_t_stat']:.1f}" if "ensemble" in summaries else "n/a",
+        ens_sharpe=f"{summaries['ensemble']['net_sharpe']:.2f}" if "ensemble" in summaries else "n/a",
     )
     output.write_text(page)
     print(f"Wrote {output} ({len(page) / 1000:.0f} kB)")

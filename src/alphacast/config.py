@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
-SUPPORTED_MODELS = ("momentum", "ridge", "elastic_net", "random_forest", "gradient_boosting")
+SUPPORTED_MODELS = (
+    "momentum", "ridge", "elastic_net", "random_forest", "gradient_boosting", "ensemble",
+)
 
 MODEL_LABELS = {
     "momentum": "Momentum 12-1",
@@ -13,6 +15,7 @@ MODEL_LABELS = {
     "elastic_net": "Elastic Net",
     "random_forest": "Random Forest",
     "gradient_boosting": "Gradient Boosting",
+    "ensemble": "Ensemble",
 }
 
 

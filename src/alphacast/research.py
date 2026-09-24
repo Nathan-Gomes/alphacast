@@ -364,6 +364,23 @@ def _weekly_prices(prices: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def ensemble_scores(scores: list[pd.Series]) -> pd.Series:
+    """Equal-weight average of the members' within-date rank percentiles.
+
+    Ranks put every member on one scale, and equal weights mean nothing is fitted to
+    the test folds.
+    """
+    return pd.concat([score.rank(pct=True) for score in scores], axis=1).mean(axis=1)
+
+
+def ensemble_attribution(members: list[tuple[pd.Series, pd.DataFrame]]) -> pd.DataFrame:
+    """Members' attributions in units of each member's score dispersion, averaged."""
+    scaled = [
+        contributions / (scores.std(ddof=0) or 1.0) for scores, contributions in members
+    ]
+    return sum(scaled) / len(scaled)
+
+
 def run_research(
     prices: pd.DataFrame,
     *,
@@ -414,29 +431,66 @@ def run_research(
     importance_rows: list[dict[str, object]] = []
     live_frames: list[pd.DataFrame] = []
     attribution_frames: list[pd.DataFrame] = []
-    steps = len(config.models) * (len(folds) + 1)
+    steps = sum(model != "ensemble" for model in config.models) * (len(folds) + 1)
     completed = 0
 
-    for model_name in config.models:
+    base_models = [model for model in config.models if model != "ensemble"]
+    members = [model for model in base_models if model != "momentum"]
+    if "ensemble" in config.models and len(members) < 2:
+        raise ValueError("The ensemble needs at least two machine-learning models to combine.")
+
+    # Phase 1: every model's fold scores and live scores. Base models are fitted; the
+    # ensemble combines its members afterwards, so it adds no fitting time.
+    fold_outputs: dict[str, list[tuple[pd.Series, pd.Series, pd.Timestamp]]] = {}
+    live_outputs: dict[str, tuple[pd.Series, pd.DataFrame]] = {}
+    for model_name in base_models:
         label = MODEL_LABELS[model_name]
-        previous_weights: pd.Series | None = None
-        last_ranks: pd.Series | None = None
+        outputs = []
         ranker = None
         for index, fold in enumerate(folds):
+            test = test_rows[fold.test_date]
+            if ranker is None or index % max(config.refit_every_folds, 1) == 0:
+                ranker = fit_ranker(
+                    model_name, sampler.rows(fold.train_end), random_seed=config.random_seed
+                )
+                fitted_through = fold.train_end
+            outputs.append(
+                (ranker.score(test), importance_from_attribution(ranker.attribution(test)), fitted_through)
+            )
+            completed += 1
+            report(0.05 + 0.9 * completed / steps, f"{label}: fold {fold.test_date.date().isoformat()}")
+        fold_outputs[model_name] = outputs
+        # Live signal: fit on every label already realised at the latest close. No
+        # embargo is needed because the live cross-section has no known label yet.
+        report(0.05 + 0.9 * completed / steps, f"{label}: scoring {signal_date.date().isoformat()}")
+        ranker = fit_ranker(model_name, sampler.rows(live_train_end), random_seed=config.random_seed)
+        live_outputs[model_name] = (ranker.score(live_rows), ranker.attribution(live_rows))
+        completed += 1
+    if "ensemble" in config.models:
+        fold_outputs["ensemble"] = [
+            (
+                ensemble_scores([fold_outputs[m][i][0] for m in members]),
+                pd.concat([fold_outputs[m][i][1] for m in members], axis=1).mean(axis=1),
+                fold_outputs[members[0]][i][2],
+            )
+            for i in range(len(folds))
+        ]
+        live_outputs["ensemble"] = (
+            ensemble_scores([live_outputs[m][0] for m in members]),
+            ensemble_attribution([live_outputs[m] for m in members]),
+        )
+
+    # Phase 2: identical evaluation, portfolio and live book for every model.
+    for model_name in config.models:
+        previous_weights: pd.Series | None = None
+        last_ranks: pd.Series | None = None
+        for fold, (scores, importance, fitted_through) in zip(folds, fold_outputs[model_name]):
             test = test_rows[fold.test_date]
             volatility_cutoff = market_volatility_by_date.loc[: fold.train_end].median()
             market_return = float(test.market_return_63.iloc[0])
             market_volatility = float(test.market_volatility_20.iloc[0])
             direction = "Expansion" if market_return >= 0 else "Contraction"
             volatility = "high vol" if market_volatility > volatility_cutoff else "low vol"
-
-            if ranker is None or index % max(config.refit_every_folds, 1) == 0:
-                ranker = fit_ranker(
-                    model_name, sampler.rows(fold.train_end), random_seed=config.random_seed
-                )
-                fitted_through = fold.train_end
-            scores = ranker.score(test)
-            importance = importance_from_attribution(ranker.attribution(test))
             diagnostics = rank_diagnostics(test, scores)
             step, previous_weights = top_ranked_portfolio(
                 test,
@@ -482,20 +536,8 @@ def run_research(
                 {"model": model_name, "date": fold.test_date, "feature": feature, "importance": value}
                 for feature, value in importance.items()
             )
-            completed += 1
-            report(
-                0.05 + 0.9 * completed / steps,
-                f"{label}: fold {fold.test_date.date().isoformat()}",
-            )
 
-        # Live signal: fit on every label already realised at the latest close. No
-        # embargo is needed because the live cross-section has no known label yet.
-        report(0.05 + 0.9 * completed / steps, f"{label}: scoring {signal_date.date().isoformat()}")
-        ranker = fit_ranker(
-            model_name, sampler.rows(live_train_end), random_seed=config.random_seed
-        )
-        live_scores = ranker.score(live_rows)
-        contributions = ranker.attribution(live_rows)
+        live_scores, contributions = live_outputs[model_name]
         order = live_scores.rank(ascending=False, method="first").astype(int)
         chosen = select_top(
             live_rows, live_scores, top_n=config.top_n, max_per_sector=config.max_per_sector
@@ -508,7 +550,7 @@ def run_research(
                 "sector": live_rows.sector.to_numpy(),
                 "score": live_scores.to_numpy(),
                 "predicted_relative_return": live_scores.to_numpy()
-                if model_name != "momentum"
+                if model_name not in {"momentum", "ensemble"}
                 else np.nan,
                 "rank": order.to_numpy(),
                 "percentile": (live_scores.rank(pct=True) * 100).to_numpy(),
@@ -536,7 +578,6 @@ def run_research(
                     }
                 )
             )
-        completed += 1
 
     report(0.97, "Summarising diagnostics")
     history_frame = pd.concat(history, ignore_index=True)

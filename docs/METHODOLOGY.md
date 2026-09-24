@@ -54,6 +54,7 @@ All models see the same folds, features, and portfolio rule. Hyperparameters are
 3. **Elastic Net:** standardised, `alpha = 0.0005`, `l1_ratio = 0.5`.
 4. **Random Forest:** 80 trees, depth 6, minimum leaf 100, half the features and half the rows per tree, fixed seed.
 5. **Gradient Boosting:** scikit-learn histogram gradient boosting, 150 iterations, learning rate 0.05, 15 leaves, minimum leaf 200, L2 = 1, fixed seed.
+6. **Ensemble:** the equal-weight average of the selected machine-learning models' within-date rank percentiles. The weights are fixed in advance, so nothing is fitted to test folds; it needs at least two members. Its attribution averages each member's contributions scaled by that member's score dispersion.
 
 ## Attribution
 

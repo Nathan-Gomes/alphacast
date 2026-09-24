@@ -62,3 +62,15 @@ def test_sector_summary_covers_every_model_and_sector():
     assert sectors.mean_rank_ic.between(-1, 1).all()
     # Active weights across sectors net to zero for a fully invested sleeve.
     assert sectors.groupby("model").mean_active_weight.sum().abs().lt(1e-9).all()
+
+
+def test_ensemble_averages_member_ranks_without_fitting():
+    from alphacast.research import ensemble_scores
+
+    config = ResearchConfig(models=("ridge", "elastic_net", "ensemble"), minimum_train_sessions=252)
+    run = run_research(synthetic_prices(sessions=700, securities=15), source="synthetic", config=config)
+    assert set(run.summaries.model) == {"ridge", "elastic_net", "ensemble"}
+    live = run.live.pivot(index="ticker", columns="model", values="score")
+    expected = ensemble_scores([live.ridge, live.elastic_net])
+    assert (live.ensemble - expected).abs().max() < 1e-12
+    assert run.live.loc[run.live.model == "ensemble", "predicted_relative_return"].isna().all()

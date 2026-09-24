@@ -26,9 +26,10 @@ def test_health_reports_the_default_workspace():
 def test_catalog_lists_models_with_estimates_and_defaults():
     catalog = client.get("/api/catalog").json()
     models = {model["id"]: model for model in catalog["models"]}
-    assert set(models) == {"momentum", "ridge", "elastic_net", "random_forest", "gradient_boosting"}
+    assert set(models) == {"momentum", "ridge", "elastic_net", "random_forest", "gradient_boosting", "ensemble"}
     assert models["momentum"]["default"] and not models["random_forest"]["default"]
-    assert all(model["seconds"] > 0 for model in models.values())
+    assert all(model["seconds"] > 0 for key, model in models.items() if key != "ensemble")
+    assert models["ensemble"]["seconds"] == 0  # derived from the others, nothing to fit
     assert {universe["id"] for universe in catalog["universes"]} == {"us_large_cap", "starter_30"}
 
 
@@ -55,6 +56,8 @@ def test_a_submitted_run_completes_and_exports():
 def test_invalid_requests_are_rejected_with_a_reason():
     assert client.post("/api/runs", json={"models": []}).status_code == 422
     assert client.post("/api/runs", json={"models": ["xgboost"]}).status_code == 422
+    lonely = client.post("/api/runs", json={"models": ["momentum", "ridge", "ensemble"]})
+    assert lonely.status_code == 422 and "ensemble" in lonely.json()["detail"]
     too_few = client.post("/api/runs", json={"source": "yahoo", "universe": "custom", "tickers": ["AAPL"]})
     assert too_few.status_code == 422 and "ten" in too_few.json()["detail"]
     backwards = client.post("/api/runs", json={"start": "2025-01-01", "end": "2020-01-01"})

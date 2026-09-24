@@ -1,6 +1,6 @@
 // Derived views of a workspace payload. Views never reach into the raw payload directly.
 
-const MODEL_ORDER = ['momentum', 'ridge', 'elastic_net', 'random_forest', 'gradient_boosting'];
+const MODEL_ORDER = ['momentum', 'ridge', 'elastic_net', 'random_forest', 'gradient_boosting', 'ensemble'];
 
 /** Colour follows the model, never its rank, so filters never repaint survivors. */
 export function modelColor(model) {

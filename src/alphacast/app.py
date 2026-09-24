@@ -24,6 +24,7 @@ MAX_TICKERS = 150
 # multiplies them by SPEED_FACTOR, set per deployment, to show an honest estimate.
 MODEL_SECONDS = {
     "momentum": 2, "ridge": 3, "elastic_net": 6, "random_forest": 17, "gradient_boosting": 21,
+    "ensemble": 0,
 }
 # Render sets RENDER=true; its small instances are roughly ten times slower.
 SPEED_FACTOR = float(os.environ.get("ALPHACAST_SPEED_FACTOR") or (12 if os.environ.get("RENDER") else 1.5))
@@ -88,7 +89,7 @@ def catalog() -> dict[str, object]:
                 "id": model,
                 "label": MODEL_LABELS[model],
                 "seconds": round(MODEL_SECONDS[model] * SPEED_FACTOR),
-                "default": model in {"momentum", "ridge", "elastic_net"},
+                "default": model in {"momentum", "ridge", "elastic_net", "ensemble"},
             }
             for model in SUPPORTED_MODELS
         ],
@@ -116,6 +117,8 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         raise HTTPException(422, f"Unsupported models: {', '.join(sorted(unknown))}")
     if not models:
         raise HTTPException(422, "Select at least one model.")
+    if "ensemble" in models and len(set(models) - {"momentum", "ensemble"}) < 2:
+        raise HTTPException(422, "The ensemble combines other models: select at least two of Ridge, Elastic Net, Random Forest and Gradient Boosting.")
     if payload.start >= payload.end:
         raise HTTPException(422, "The start date must be before the end date.")
     if payload.universe == "custom":
