@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { cadence, date, escapeHtml, html, num, raw } from '../format.js';
+import { cadence, date, escapeHtml, html, num, pct, raw } from '../format.js';
 import { statusBadge } from './parts.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -27,6 +27,61 @@ function historyHtml(runs, activeId) {
 }
 
 let mounted = null;
+const workspaces = new Map();
+
+async function workspace(id) {
+  if (!workspaces.has(id)) workspaces.set(id, api.run(id).then((record) => record.workspace));
+  return workspaces.get(id);
+}
+
+const COMPARE = [
+  ['mean_rank_ic', 'Mean IC', (v) => num(v, 3), 3],
+  ['net_sharpe', 'Net Sharpe', (v) => num(v, 2), 2],
+  ['mean_turnover', 'Turnover', (v) => pct(v, 0), null],
+  ['max_drawdown', 'Max DD', (v) => pct(v, 1), null],
+];
+
+async function drawCompare() {
+  const a = document.getElementById('compare-a')?.value;
+  const b = document.getElementById('compare-b')?.value;
+  const target = document.getElementById('compare-table');
+  if (!target) return;
+  if (!a || !b || a === b) { target.innerHTML = '<p class="empty">Choose two different completed runs.</p>'; return; }
+  target.innerHTML = '<p class="empty">Loading…</p>';
+  const [wa, wb] = await Promise.all([workspace(a), workspace(b)]);
+  const byModel = (ws) => Object.fromEntries(ws.summaries.map((row) => [row.model, row]));
+  const sa = byModel(wa);
+  const sb = byModel(wb);
+  const models = Object.keys(sa).filter((model) => sb[model]);
+  if (!models.length) { target.innerHTML = '<p class="empty">These runs have no model in common.</p>'; return; }
+  const delta = (key, digits, x, y) => {
+    const d = y - x;
+    const text = digits === null ? pct(d, 1, { sign: true }) : num(d, digits, { sign: true });
+    const better = key === 'mean_turnover' ? d < 0 : d > 0;
+    return `<span class="${Math.abs(d) < 1e-9 ? 'muted' : better ? 'pos' : 'neg'}">${text}</span>`;
+  };
+  target.innerHTML = `<table><thead><tr><th scope="col">Model</th>${COMPARE.map(([, label]) => `<th scope="col" class="num">${label} A</th><th scope="col" class="num">B</th><th scope="col" class="num">B − A</th>`).join('')}</tr></thead><tbody>${models.map((model) => `<tr><td>${escapeHtml(sa[model].label || model)}</td>${COMPARE.map(([key, , fmt, digits]) => `<td class="num">${fmt(sa[model][key])}</td><td class="num">${fmt(sb[model][key])}</td><td class="num">${delta(key, digits, sa[model][key], sb[model][key])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function syncCompare(runs) {
+  const complete = runs.filter((run) => run.status === 'complete');
+  const selectA = document.getElementById('compare-a');
+  const selectB = document.getElementById('compare-b');
+  if (!selectA) return;
+  document.getElementById('compare-panel').hidden = complete.length < 2;
+  const options = complete.map((run) => `<option value="${escapeHtml(run.id)}">${escapeHtml(run.name)}</option>`).join('');
+  const [prevA, prevB] = [selectA.value, selectB.value];
+  selectA.innerHTML = options;
+  selectB.innerHTML = options;
+  selectA.value = complete.some((run) => run.id === prevA) ? prevA : (complete.find((run) => run.id === 'default') || complete[0])?.id || '';
+  selectB.value = complete.some((run) => run.id === prevB) ? prevB : complete.find((run) => run.id !== selectA.value)?.id || '';
+  if (!selectA.dataset.bound) {
+    selectA.dataset.bound = selectB.dataset.bound = '1';
+    selectA.addEventListener('change', drawCompare);
+    selectB.addEventListener('change', drawCompare);
+  }
+  drawCompare();
+}
 
 export default {
   title: 'Runs',
@@ -37,6 +92,7 @@ export default {
     if (!target || !mounted) return;
     target.innerHTML = historyHtml(runs, runId);
     target.querySelectorAll('[data-open]').forEach((button) => button.addEventListener('click', () => openRun(button.dataset.open)));
+    syncCompare(runs);
   },
   render(ctx) {
     const catalog = ctx.catalog;
@@ -88,7 +144,12 @@ export default {
           <div class="panel-head"><div><h2>Run history</h2><p>The default workspace is precomputed from the frozen snapshot.</p></div></div>
           <div class="panel-body flush table-wrap" id="run-history"></div>
         </section>
-      </div>`;
+      </div>
+      <section class="panel section-gap" id="compare-panel">
+        <div class="panel-head"><div><h2>Compare runs</h2><p>Models present in both runs, side by side. B − A shows what the change did.</p></div>
+          <div class="actions"><label class="field compact"><span>A</span><select id="compare-a" aria-label="Run A"></select></label><label class="field compact"><span>B</span><select id="compare-b" aria-label="Run B"></select></label></div></div>
+        <div class="panel-body flush table-wrap" id="compare-table"></div>
+      </section>`;
 
     const form = document.getElementById('run-form');
     const error = document.getElementById('form-error');
