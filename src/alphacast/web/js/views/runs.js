@@ -69,10 +69,15 @@ export default {
                 <div class="model-checks">${catalog.models.map((model) => raw(html`<label class="check" title="About ${duration(model.seconds)} on this server"><input type="checkbox" name="models" value="${model.id}" ${raw(model.default ? 'checked' : '')}> ${model.label}${raw(model.seconds >= 60 ? ' <span class="tag">slower</span>' : '')}</label>`))}</div>
               </fieldset>
               <label class="field">Portfolio size (top N) <input type="number" name="top_n" min="3" max="40" value="${catalog.defaults.top_n}"></label>
-              <label class="field">Max names per sector <select name="max_per_sector"><option value="">No cap</option>${[2, 3, 4, 5].map((cap) => raw(`<option value="${cap}">${cap}</option>`))}</select></label>
-              <label class="field">Rebalance <select name="rebalance_every_folds"><option value="1">Monthly</option><option value="2">Every two months</option><option value="3">Quarterly</option></select></label>
-              <label class="field">Holding buffer <select name="hold_buffer"><option value="">None: trade to the top N</option><option value="1.5">Keep while in top 1.5 × N</option><option value="2">Keep while in top 2 × N</option></select></label>
               <label class="field">One-way cost (bps) <input type="number" name="transaction_cost_bps" min="0" max="250" step="1" value="${catalog.defaults.transaction_cost_bps}"></label>
+              <details class="field full advanced" id="rules">
+                <summary><span>Portfolio rules</span><span class="muted" id="rules-summary"></span></summary>
+                <div class="form-grid">
+                  <label class="field">Rebalance <select name="rebalance_every_folds"><option value="1">Monthly</option><option value="2">Every two months</option><option value="3">Quarterly</option></select></label>
+                  <label class="field">Holding buffer <select name="hold_buffer"><option value="">None: trade to the top N</option><option value="1.5">Keep while in top 1.5 × N</option><option value="2">Keep while in top 2 × N</option></select></label>
+                  <label class="field">Max names per sector <select name="max_per_sector"><option value="">No cap</option>${[2, 3, 4, 5].map((cap) => raw(`<option value="${cap}">${cap}</option>`))}</select></label>
+                </div>
+              </details>
             </div>
             <p class="form-error" id="form-error" role="alert"></p>
             <div class="form-actions"><button class="button primary" type="submit" id="submit">Run study</button><span class="muted" id="estimate" aria-live="polite"></span></div>
@@ -95,6 +100,13 @@ export default {
       custom.hidden = source !== 'yahoo';
       if (source !== 'yahoo' && form.universe.value === 'custom') form.universe.value = 'us_large_cap';
       document.getElementById('tickers-field').hidden = !(source === 'yahoo' && form.universe.value === 'custom');
+      const rules = new FormData(form);
+      const parts = [
+        rules.get('rebalance_every_folds') !== '1' ? cadence(Number(rules.get('rebalance_every_folds'))) : 'monthly',
+        rules.get('hold_buffer') ? `buffer ${rules.get('hold_buffer')}×` : 'no buffer',
+        rules.get('max_per_sector') ? `≤${rules.get('max_per_sector')} per sector` : 'no sector cap',
+      ];
+      document.getElementById('rules-summary').textContent = parts.join(' · ');
       const chosen = new Set(new FormData(form).getAll('models'));
       const seconds = catalog.overhead_seconds + catalog.models.filter((model) => chosen.has(model.id)).reduce((sum, model) => sum + model.seconds, 0)
         + (source === 'yahoo' ? 20 : 0);
