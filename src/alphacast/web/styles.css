@@ -10,7 +10,7 @@
   --border-strong: #2f3c4a;
   --ink: #e8eef3;
   --ink-2: #aab6c1;
-  --muted: #7a8793;
+  --muted: #8a96a2;
   --grid: #1f2933;
   --axis: #34414e;
   --accent: #3ecf9a;
@@ -28,6 +28,10 @@
   --good: #0ca30c;
   --warning: #fab219;
   --critical: #d03b3b;
+  /* Status text tokens: the status hues, stepped to clear 4.5:1 on each surface. */
+  --good-ink: #1fb55a;
+  --warning-ink: #fab219;
+  --critical-ink: #f08080;
   --seq-0: #13202e;
   --seq-1: #184f95;
   --seq-2: #2a78d6;
@@ -52,7 +56,10 @@
   --border-strong: #cfd4ce;
   --ink: #111820;
   --ink-2: #47525c;
-  --muted: #6c7680;
+  --muted: #5f6973;
+  --good-ink: #137a3a;
+  --warning-ink: #8a5d00;
+  --critical-ink: #b42d2d;
   --grid: #eceee9;
   --axis: #c3c8c1;
   --accent: #117a57;
@@ -243,10 +250,9 @@ tr.selected td { background: var(--accent-soft); }
 .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 500; border: 1px solid var(--border-strong); color: var(--ink-2); white-space: nowrap; }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge.plain::before { display: none; }
-.badge.healthy, .badge.stable, .badge.complete { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
-.badge.watch, .badge.moderate, .badge.running, .badge.queued { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
-.badge.degraded, .badge.shifted, .badge.failed { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 45%, transparent); }
-:root[data-theme="light"] .badge.watch, :root[data-theme="light"] .badge.moderate, :root[data-theme="light"] .badge.running, :root[data-theme="light"] .badge.queued { color: #8a5d00; }
+.badge.healthy, .badge.stable, .badge.complete { color: var(--good-ink); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.badge.watch, .badge.moderate, .badge.running, .badge.queued { color: var(--warning-ink); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
+.badge.degraded, .badge.shifted, .badge.failed { color: var(--critical-ink); border-color: color-mix(in srgb, var(--critical) 45%, transparent); }
 .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; background: var(--surface-3); color: var(--ink-2); }
 .tag.new { background: color-mix(in srgb, var(--pos) 16%, transparent); color: var(--pos); }
 .tag.exit { background: color-mix(in srgb, var(--neg) 16%, transparent); color: var(--neg); }
