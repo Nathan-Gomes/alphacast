@@ -1,16 +1,48 @@
+<p align="center">
+  <img src="docs/assets/alphacast-header.png" alt="AlphaCast: machine-learning stock rankings for 98 US large caps" width="100%">
+</p>
+
 # AlphaCast
 
-**A machine-learning equity ranking workstation: walk-forward validation, live signals, portfolio construction, and model monitoring.**
+**A machine-learning equity ranking workstation: rank 98 US large caps against their sector, test six models walk-forward, turn the signal into a cost-aware portfolio, and keep monitoring it.**
 
-[Launch AlphaCast](https://alphacast.onrender.com) · [Read the case study](https://www.nathan-gomes.com/Project-AlphaCast.dc.html) · [Methodology](docs/METHODOLOGY.md)
+[Launch AlphaCast](https://alphacast.onrender.com) · [Read the case study](https://www.nathan-gomes.com/Project-AlphaCast.dc.html) · [Methodology](docs/METHODOLOGY.md) · [API reference](https://alphacast.onrender.com/api/docs)
+
+The live app opens on the latest signal from a Yahoo Finance snapshot that refreshes weekly. It ranks; it does not forecast prices, place trades, or give investment advice.
+
+[![Tests](https://github.com/Nathan-Gomes/alphacast/actions/workflows/test.yml/badge.svg)](https://github.com/Nathan-Gomes/alphacast/actions/workflows/test.yml)
+[![Data refresh](https://github.com/Nathan-Gomes/alphacast/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/Nathan-Gomes/alphacast/actions/workflows/refresh-data.yml)
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-0d1117?style=for-the-badge&logo=python&logoColor=58a6ff)
+![pandas](https://img.shields.io/badge/pandas-panel%20data-0d1117?style=for-the-badge&logo=pandas&logoColor=e70488)
+![NumPy](https://img.shields.io/badge/NumPy-linear%20algebra-0d1117?style=for-the-badge&logo=numpy&logoColor=4dabcf)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-5%20models-0d1117?style=for-the-badge&logo=scikitlearn&logoColor=f7931e)
+![SciPy](https://img.shields.io/badge/SciPy-significance-0d1117?style=for-the-badge&logo=scipy&logoColor=8caae6)
+![FastAPI](https://img.shields.io/badge/FastAPI-background%20runs-0d1117?style=for-the-badge&logo=fastapi&logoColor=009688)
+![JavaScript](https://img.shields.io/badge/JavaScript-workstation%20UI-0d1117?style=for-the-badge&logo=javascript&logoColor=f7df1e)
+![Yahoo Finance](https://img.shields.io/badge/Yahoo%20Finance-price%20data-0d1117?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZD0iTTMgMTdsNi02IDQgNCA4LTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2E3OGJmYSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg%3D%3D)
+![pytest](https://img.shields.io/badge/pytest-43%20tests-0d1117?style=for-the-badge&logo=pytest&logoColor=ffffff)
+![Node](https://img.shields.io/badge/Node-interface%20tests-0d1117?style=for-the-badge&logo=nodedotjs&logoColor=7ee787)
+![axe-core](https://img.shields.io/badge/axe--core-accessibility%20audit%20in%20Chrome-0d1117?style=for-the-badge&logo=googlechrome&logoColor=ffffff)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%20and%20weekly%20data-0d1117?style=for-the-badge&logo=githubactions&logoColor=58a6ff)
+![Docker](https://img.shields.io/badge/Docker-container-0d1117?style=for-the-badge&logo=docker&logoColor=2496ed)
+![Render](https://img.shields.io/badge/Render-hosting-0d1117?style=for-the-badge&logo=render&logoColor=ffffff)
 
 ![AlphaCast overview](docs/assets/overview.png)
 
-AlphaCast asks one question:
+*The Overview: the latest signal, the active model's out-of-sample record and health, and a five-point read-out generated from the results.*
 
-> Using only information available at a month-end close, can a model rank stocks by how they will perform against their own sector over the next 20 trading sessions?
+---
 
-It ranks. It does not forecast prices, place trades, or give investment advice.
+## What this is
+
+Three things, in one repository.
+
+**A research engine.** Fourteen trailing price and volume features, ranked within each date, feed six models (a 12-1 momentum baseline, Ridge, Elastic Net, Random Forest, gradient boosting and an equal-weight ensemble) on 114 monthly folds with a 20-session embargo. Every result is judged as a ranking: Rank IC with Holm-adjusted p-values, quintile spreads, beta and alpha, and a shuffled-data placebo that must find nothing.
+
+**A workstation.** A multi-view application for using the signal: today's ranks and why, the portfolio they imply, how the backtest held up after costs, where the model works, and whether it is degrading. Studies with different data, costs and portfolio rules run in the background and can be compared side by side.
+
+**An honest answer.** Random Forest has the strongest ranking signal (Rank IC 0.024), but it is suggestive rather than conclusive once six models are compared, about half its outperformance is market exposure (beta 1.30), and it has weakened over the last six months. The app shows all of that rather than hiding it.
 
 ## What it does
 
