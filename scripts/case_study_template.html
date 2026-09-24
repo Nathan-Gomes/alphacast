@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>AlphaCast | Nathan Gomes</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AlphaCast: a machine-learning equity ranking workstation by Nathan Gomes. Five models on embargoed walk-forward folds across 98 US large caps, live signals, portfolio construction and model monitoring.">
+<link rel="stylesheet" href="./revamp.css">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet">
+{style}
+<style>
+  .shot {{ margin-top: 26px; border: 1px solid #1c2631; background: #0b0f14; }}
+  .shot img {{ display: block; width: 100%; height: auto; }}
+  .shots {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }}
+  .shots figcaption {{ padding: 12px 14px; background: var(--card); border-top: 1px solid var(--line); font-size: 14px; line-height: 1.5; color: var(--body); }}
+  .views {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 26px; }}
+  .views .step p {{ color: var(--body); }}
+  .live-badge {{ display: inline-flex; align-items: center; gap: 8px; }}
+  .live-badge::before {{ content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green-bright); }}
+  @media (max-width: 980px) {{ .views {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+  @media (max-width: 760px) {{ .views, .shots {{ grid-template-columns: minmax(0, 1fr); }} }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:flex;align-items:baseline;justify-content:space-between;gap:32px;padding:26px 0;border-bottom:1px solid #e6e2db">
+    <a href="/" style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;color:#16181a;font-weight:500">Nathan&nbsp;Gomes</a>
+    <nav style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase">
+      <a href="/#projects" style="text-decoration:none;color:#7a7e83">Projects</a>
+      <a href="https://alphacast.onrender.com" target="_blank" rel="noreferrer" style="text-decoration:none;color:#1a6f57">Live app</a>
+      <a href="https://github.com/Nathan-Gomes/alphacast" target="_blank" rel="noreferrer" style="text-decoration:none;color:#7a7e83">GitHub</a>
+    </nav>
+  </header>
+</div>
+
+<div class="skimnav">
+  <div class="wrap">
+    <div class="skimnav-inner">
+      <a href="#result">01 &nbsp;Result</a>
+      <a href="#app">02 &nbsp;The app</a>
+      <a href="#performance">03 &nbsp;Performance</a>
+      <a href="#models">04 &nbsp;Did ML help?</a>
+      <a href="#regimes">05 &nbsp;When it works</a>
+      <a href="#system">06 &nbsp;How it works</a>
+      <a href="#trust">07 &nbsp;Validation</a>
+      <a href="#next">08 &nbsp;Next</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main>
+
+    <section class="hero">
+      <div class="herogrid">
+        <div>
+          <p class="eyebrow"><span class="live-badge">Current focus &nbsp;/&nbsp; Machine-learning equity research</span></p>
+          <h1>AlphaCast</h1>
+          <p class="deck">A research workstation that ranks 98 US large caps by their expected return against their own sector over the next 20 trading sessions, tests five models on the same walk-forward folds, and turns the ranking into a portfolio it keeps monitoring.</p>
+          <div class="verdict"><strong>The verdict:</strong> one model, Random Forest, found a small but statistically real ranking signal (Rank IC {rf_ic}, t = {rf_t}) that survived costs. It is concentrated in volatile markets, most models did not beat plain momentum, and every model has weakened over the last six months.</div>
+          <div class="btnrow">
+            <a class="btn btn-primary" href="https://alphacast.onrender.com" target="_blank" rel="noreferrer">Launch the app</a>
+            <a class="btn btn-ghost" href="https://github.com/Nathan-Gomes/alphacast/blob/main/docs/METHODOLOGY.md" target="_blank" rel="noreferrer">Read the methodology</a>
+            <a class="btn btn-ghost" href="https://github.com/Nathan-Gomes/alphacast" target="_blank" rel="noreferrer">Source on GitHub</a>
+          </div>
+        </div>
+        <dl class="factlist">
+          <div><dt>Test window</dt><dd>{first} &ndash; {last}<br>{folds} monthly folds, out of sample</dd></div>
+          <div><dt>Universe</dt><dd>98 US large caps &middot; 11 sectors<br>daily data 2014 &ndash; 2026</dd></div>
+          <div><dt>Models</dt><dd>Momentum baseline &middot; Ridge<br>Elastic Net &middot; Random Forest<br>Gradient Boosting</dd></div>
+          <div><dt>Stack</dt><dd>Python &middot; pandas &middot; scikit-learn<br>FastAPI &middot; JavaScript &middot; pytest</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section id="result" style="padding:56px 0 0">
+      <div class="scoreboard">
+        <div class="score">
+          <span class="score-label">Mean Rank IC</span>
+          <strong class="score-value">{rf_ic}</strong>
+          <div class="score-vs">t = {rf_t} &middot; momentum {mom_ic}</div>
+          <span class="pill pill-good">Only model with t &gt; 2</span>
+        </div>
+        <div class="score">
+          <span class="score-label">Net Sharpe</span>
+          <strong class="score-value">{rf_sharpe}</strong>
+          <div class="score-vs">Universe {bench_sharpe} &middot; momentum {mom_sharpe}</div>
+          <span class="pill pill-good">Best of five models</span>
+        </div>
+        <div class="score">
+          <span class="score-label">Annual return, net</span>
+          <strong class="score-value">{rf_ann}</strong>
+          <div class="score-vs">Universe {bench_ann}</div>
+          <span class="pill pill-good">{ann_gap} pts ahead</span>
+        </div>
+        <div class="score">
+          <span class="score-label">Worst drawdown</span>
+          <strong class="score-value">{rf_dd}</strong>
+          <div class="score-vs">Universe {bench_dd}</div>
+          <span class="pill pill-cost">{dd_gap} pts deeper</span>
+        </div>
+      </div>
+      <p class="caption">Random Forest top-15 equal-weight sleeve, rebalanced monthly, net of 10 bps one-way costs on {rf_turnover} average monthly turnover. Walk-forward, out of sample, {first} &ndash; {last}. Benchmark: the equal-weight universe over the same periods.</p>
+    </section>
+
+    <section style="padding:56px 0 0">
+      <p class="eyebrow" style="margin-bottom:22px">The thirty-second version</p>
+      <div class="takeaways">
+        <div class="takeaway">
+          <span class="takeaway-n">1</span>
+          <h3>The signal is small, and only one model has it</h3>
+          <p>Random Forest ranked stocks with a mean Rank IC of <b>{rf_ic}</b>, positive in <b>{rf_pos}</b> of {folds} months, the only result with a t-statistic above 2. That is typical of real equity signals: useful as a tilt, nowhere near a forecast.</p>
+        </div>
+        <div class="takeaway">
+          <span class="takeaway-n">2</span>
+          <h3>Most machine learning did not beat momentum</h3>
+          <p>Ridge, Elastic Net and gradient boosting all reached about <b>0.010</b> IC, above momentum's <b>{mom_ic}</b> but within noise, and after turnover their Sharpe ratios fell <b>below</b> momentum's {mom_sharpe}. Model complexity was not what made the difference.</p>
+        </div>
+        <div class="takeaway">
+          <span class="takeaway-n">3</span>
+          <h3>It works in stress and fades in calm markets</h3>
+          <p>In high-volatility months ({stressed_folds} of them) Random Forest's IC averaged <b>{stressed_ic}</b>; in calm expansions ({calm_folds} months) it was <b>{calm_ic}</b>. The monitoring view currently flags <b>all {degraded} models as degraded</b>. The app shows this rather than hiding it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="app" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">02</div>
+        <div>
+          <p class="eyebrow">The application</p>
+          <h2>Built as software people use, not a notebook</h2>
+          <p class="lede">The live app opens on the latest signal, precomputed from a frozen Yahoo Finance snapshot so the first screen loads instantly. New studies run in the background with progress reporting, and every table exports to CSV or JSON.</p>
+        </div>
+      </div>
+      <div class="shots">
+        <figure class="shot"><img src="assets/alphacast-overview.png" alt="AlphaCast overview screen: signal date, model health, generated research read-out, current top ranks and a growth chart" loading="lazy"><figcaption><b>Overview.</b> The latest signal, the active model's record and health, and a read-out generated from the results.</figcaption></figure>
+        <figure class="shot"><img src="assets/alphacast-security.png" alt="AlphaCast security screen for NVDA: rank, price, per-feature attribution and rank under each model" loading="lazy"><figcaption><b>Security.</b> Why a stock ranks where it does, and how its past ranks played out.</figcaption></figure>
+      </div>
+      <div class="views">
+        <div class="step"><span class="step-n">SIGNAL</span><h3>Overview &amp; Screener</h3><p>Today's ranks for the whole universe with factor profiles, rank changes, search, sector and quintile filters.</p></div>
+        <div class="step"><span class="step-n">EXPLAIN</span><h3>Security</h3><p>Per-feature attribution, price path, rank history against realised outcomes, rank under every model.</p></div>
+        <div class="step"><span class="step-n">ACT</span><h3>Portfolio</h3><p>The top-15 book at the latest close: weights, entries and exits, implied turnover and cost, sector tilts.</p></div>
+        <div class="step"><span class="step-n">EVALUATE</span><h3>Backtest &amp; Diagnostics</h3><p>Net and gross growth, drawdowns, rolling active return, monthly IC, quintile spreads, regimes.</p></div>
+        <div class="step"><span class="step-n">COMPARE</span><h3>Models</h3><p>All five models on identical folds: IC, t-stat, Sharpe, turnover, cumulative IC and feature reliance.</p></div>
+        <div class="step"><span class="step-n">WATCH</span><h3>Monitoring &amp; Runs</h3><p>Health status, rolling IC bands, reliance and feature drift; background runs on live Yahoo data.</p></div>
+      </div>
+    </section>
+
+    <section id="performance" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">03</div>
+        <div>
+          <p class="eyebrow">Out-of-sample performance</p>
+          <h2>What $1 in the top-ranked sleeve became</h2>
+          <p class="lede">Each month the model ranks all 98 stocks using only data up to that close, the top 15 are held equally for the next 20 sessions, and trading costs are charged on every change. Log scale, so equal slopes mean equal percentage growth.</p>
+        </div>
+      </div>
+      <div class="chart-card">
+        {growth_svg}
+        {growth_legend}
+      </div>
+      <div class="readout"><b>How to read it:</b> the universe itself compounded strongly (a {bench_sharpe} Sharpe for an equal-weight basket of today's large caps, flattered by survivorship). Random Forest's edge over it works out to an information ratio of <b>{rf_ir}</b>, bought with a deeper worst drawdown ({rf_dd} against {bench_dd}) and {rf_cost} a year in trading costs.</div>
+    </section>
+
+    <section id="models" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">04</div>
+        <div>
+          <p class="eyebrow">Did machine learning help?</p>
+          <h2>Five models, one set of folds, one bar to clear</h2>
+          <p class="lede">A 12-1 momentum ranking needs no fitting, so it is the honest baseline. Every model saw the same features, the same folds, the same portfolio rule and the same costs. The cumulative IC chart shows whether an edge was persistent or came from a few lucky months.</p>
+        </div>
+      </div>
+      <div class="chart-card">
+        <p class="eyebrow" style="color:var(--muted)">Cumulative monthly Rank IC</p>
+        {ic_svg}
+        {ic_legend}
+        <div class="tablewrap">
+          <table class="results">
+            <thead><tr><th>Model</th><th>Mean IC</th><th>t-stat</th><th>IC &gt; 0</th><th>Q1 &minus; Q5</th><th>Net Sharpe</th><th>Turnover</th><th>Max DD</th></tr></thead>
+            <tbody>
+{result_rows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="readout"><b>The answer is mixed.</b> Tree ensembles can capture interactions the linear models miss, and Random Forest's IC line climbs steadily through 2020 and 2022. Gradient boosting, the more flexible tree model, traded more and gained less. The linear models end up close to momentum once costs are counted.</div>
+    </section>
+
+    <section id="regimes" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">05</div>
+        <div>
+          <p class="eyebrow">When does it work?</p>
+          <h2>The signal is not stationary</h2>
+          <p class="lede">Each month is labelled using only trailing information: the universe's 63-session return sets expansion or contraction, and 20-session volatility above the training window's median sets high volatility. These labels are diagnostics, never inputs or tuning targets.</p>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="tablewrap">
+          <table class="results">
+            <thead><tr><th>Regime (Random Forest)</th><th>Months</th><th>Mean IC</th><th>IC &gt; 0</th><th>Monthly active return</th></tr></thead>
+            <tbody>{regime_rows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="readout"><b>Most of the edge comes from volatile markets.</b> In calm expansions, the most common state, the ranking was indistinguishable from random. The last six folds average an IC of {rf_recent}, which is why the monitoring view flags the model as degraded going into the {signal} signal.</div>
+    </section>
+
+    <section id="system" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">06</div>
+        <div>
+          <p class="eyebrow">How it works</p>
+          <h2>From daily prices to a monitored portfolio</h2>
+        </div>
+      </div>
+      <div class="pipeline" style="margin-top:32px">
+        <div class="step"><span class="step-n">01 &nbsp;DATA</span><h3>Point-in-time panel</h3><p>Adjusted prices and volume for 98 stocks. A quality gate drops sessions Yahoo published for under 90% of the universe.</p><div class="step-tools"><span>yfinance</span><span>pandas</span></div></div>
+        <div class="step"><span class="step-n">02 &nbsp;FEATURES</span><h3>14 trailing signals</h3><p>Momentum, risk, liquidity and sector-relative strength, ranked within each date so decade-long level drift cannot leak in.</p><div class="step-tools"><span>NumPy</span><span>pandas</span></div></div>
+        <div class="step"><span class="step-n">03 &nbsp;MODELS</span><h3>Embargoed walk-forward</h3><p>Expanding windows stop 20 sessions before each test month. Weekly-sampled training, quarterly refits, winsorised labels.</p><div class="step-tools"><span>scikit-learn</span></div></div>
+        <div class="step"><span class="step-n">04 &nbsp;PRODUCT</span><h3>API and workstation</h3><p>Background runs, live scoring, attribution, drift and health checks served to a dependency-free JavaScript app.</p><div class="step-tools"><span>FastAPI</span><span>JavaScript</span><span>Render</span></div></div>
+      </div>
+    </section>
+
+    <section id="trust" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">07</div>
+        <div>
+          <p class="eyebrow">Validation</p>
+          <h2>Why the numbers can be trusted, and where they cannot</h2>
+        </div>
+      </div>
+      <div class="evidence" style="margin-top:32px">
+        <div class="ecard"><p class="eyebrow">Leakage controls</p><h3>Every label starts after its decision</h3><p>Features use data through the decision close; the 20-session target starts the next session; training ends 20 sessions before each test date so labels never overlap. Stale quarterly fits can only be older, never newer.</p><span class="stat">Tested: embargo, month-end folds, sampler equivalence</span></div>
+        <div class="ecard"><p class="eyebrow">Engineering</p><h3>Bugs found by inspecting the data</h3><p>Building the app surfaced a forward-return shift that crossed ticker boundaries, a Yahoo session published for 28 of 98 stocks, and a truncated final month counted as a fold. Each is fixed and covered by a regression test.</p><span class="stat">17 pytest cases &middot; ruff &middot; CI on every push</span></div>
+        <div class="ecard"><p class="eyebrow">Deliberately not claimed</p><h3>What this cannot show</h3><p>The universe is today's large caps, so results carry survivorship bias. There are no point-in-time fundamentals, delisting returns, borrow costs, taxes or market-impact model, and no portfolio optimizer.</p><span class="stat">Stated in the app, the README and here</span></div>
+        <div class="ecard"><p class="eyebrow">Explainability</p><h3>Attribution for every ranked stock</h3><p>Each score is decomposed by setting one feature at a time to the day's median. The decomposition is exact for the linear models and a local approximation for trees; reliance is compared across models on one scale.</p><span class="stat">Occlusion attribution &middot; reliance drift</span></div>
+      </div>
+    </section>
+
+    <section id="next" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">08</div>
+        <div>
+          <p class="eyebrow">Next research iteration</p>
+          <h2>Strengthen the data before expanding the claim</h2>
+          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, sector-constrained optimisation, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding:80px 0 0">
+      <div class="skills">
+        <div class="skill"><h3>Quantitative research</h3><p>Cross-sectional signal design, rank IC and quintile analysis, walk-forward validation with an embargo, regime diagnostics.</p><div class="chips"><span>Rank IC</span><span>Walk-forward</span><span>Regimes</span></div></div>
+        <div class="skill"><h3>Machine learning</h3><p>Five comparable models with declared hyperparameters, label winsorisation, occlusion attribution and drift monitoring.</p><div class="chips"><span>scikit-learn</span><span>Random Forest</span><span>PSI</span></div></div>
+        <div class="skill"><h3>Software engineering</h3><p>Background job API, multi-view JavaScript workstation, performance profiling, tests, CI and Docker deployment.</p><div class="chips"><span>FastAPI</span><span>JavaScript</span><span>pytest</span></div></div>
+      </div>
+    </section>
+
+    <section style="padding:88px 0 96px;margin-top:80px;border-top:1px solid #e6e2db;text-align:center">
+      <p class="eyebrow">Try it</p>
+      <h2 style="margin:16px auto 16px;max-width:22ch;font-size:clamp(28px,3.6vw,40px);line-height:1.1;letter-spacing:-0.02em">Open the workstation and inspect today's ranks</h2>
+      <p style="max-width:56ch;margin:0 auto;color:var(--body);font-size:17px;line-height:1.6">The free instance may take a minute to wake up. Nothing in AlphaCast is investment advice.</p>
+      <div class="btnrow" style="justify-content:center">
+        <a class="btn btn-primary" href="https://alphacast.onrender.com" target="_blank" rel="noreferrer">Launch AlphaCast</a>
+        <a class="btn btn-ghost" href="https://github.com/Nathan-Gomes/alphacast" target="_blank" rel="noreferrer">Source on GitHub</a>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="wrap">
+  <footer style="display:flex;justify-content:space-between;gap:24px;padding:26px 0;border-top:1px solid #e6e2db;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#7a7e83">
+    <span>AlphaCast &middot; Nathan Gomes</span><a href="/#projects" style="color:#7a7e83;text-decoration:none">All projects</a>
+  </footer>
+</div>
+</body>
+</html>
