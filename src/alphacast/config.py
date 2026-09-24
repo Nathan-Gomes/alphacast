@@ -43,6 +43,8 @@ class ResearchConfig:
     max_per_sector: int | None = None
     # Keep a held name while it ranks within this many places; None trades to the top N.
     hold_buffer: int | None = None
+    # Residualise each month's scores against 60-session volatility before ranking.
+    neutralize_volatility: bool = False
     transaction_cost_bps: float = 10.0
     monitoring_window: int = 6
     models: tuple[str, ...] = SUPPORTED_MODELS

@@ -50,6 +50,7 @@ class RunRequest:
             "max_per_sector": self.config.max_per_sector,
             "rebalance_every_folds": self.config.rebalance_every_folds,
             "hold_buffer": self.config.hold_buffer,
+            "neutralize_volatility": self.config.neutralize_volatility,
             "transaction_cost_bps": self.config.transaction_cost_bps,
         }
 

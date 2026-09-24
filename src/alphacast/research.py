@@ -188,6 +188,18 @@ def _weekly_prices(prices: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def neutralize(scores: pd.Series, exposure: pd.Series) -> pd.Series:
+    """Remove the part of today's scores explained by a stock's volatility rank.
+
+    The residual keeps the model's ordering within similar-risk stocks, so the sleeve
+    cannot earn its return simply by holding the most volatile names.
+    """
+    centred = exposure.rank(pct=True).to_numpy() - 0.5
+    design = np.column_stack([np.ones(len(centred)), centred])
+    coef, *_ = np.linalg.lstsq(design, scores.to_numpy(), rcond=None)
+    return pd.Series(scores.to_numpy() - centred * coef[1], index=scores.index)
+
+
 def ensemble_scores(scores: list[pd.Series]) -> pd.Series:
     """Equal-weight average of the members' within-date rank percentiles.
 
@@ -278,8 +290,11 @@ def run_research(
                     model_name, sampler.rows(fold.train_end), random_seed=config.random_seed
                 )
                 fitted_through = fold.train_end
+            scores = ranker.score(test)
+            if config.neutralize_volatility:
+                scores = neutralize(scores, test.volatility_60)
             outputs.append(
-                (ranker.score(test), importance_from_attribution(ranker.attribution(test)), fitted_through)
+                (scores, importance_from_attribution(ranker.attribution(test)), fitted_through)
             )
             completed += 1
             report(0.05 + 0.9 * completed / steps, f"{label}: fold {fold.test_date.date().isoformat()}")
@@ -288,7 +303,10 @@ def run_research(
         # embargo is needed because the live cross-section has no known label yet.
         report(0.05 + 0.9 * completed / steps, f"{label}: scoring {signal_date.date().isoformat()}")
         ranker = fit_ranker(model_name, sampler.rows(live_train_end), random_seed=config.random_seed)
-        live_outputs[model_name] = (ranker.score(live_rows), ranker.attribution(live_rows))
+        live_scores = ranker.score(live_rows)
+        if config.neutralize_volatility:
+            live_scores = neutralize(live_scores, live_rows.volatility_60)
+        live_outputs[model_name] = (live_scores, ranker.attribution(live_rows))
         completed += 1
     if "ensemble" in config.models:
         fold_outputs["ensemble"] = [

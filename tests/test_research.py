@@ -117,3 +117,16 @@ def test_quarterly_rebalancing_trades_only_every_third_month():
     run = run_research(synthetic_prices(sessions=700, securities=15), source="synthetic", config=config)
     turnover = run.periods.sort_values("date").turnover.reset_index(drop=True)
     assert (turnover[[i for i in range(len(turnover)) if i % 3]] == 0).all()
+
+
+def test_neutralized_scores_are_uncorrelated_with_volatility():
+    import numpy as np
+
+    from alphacast.research import neutralize
+
+    rng = np.random.default_rng(4)
+    vol = pd.Series(rng.uniform(0.1, 0.6, 200))
+    scores = pd.Series(2.0 * vol.rank(pct=True) + rng.normal(0, 0.1, 200))
+    residual = neutralize(scores, vol)
+    assert abs(np.corrcoef(residual, vol.rank(pct=True))[0, 1]) < 1e-9
+    assert abs(np.corrcoef(scores, vol.rank(pct=True))[0, 1]) > 0.9

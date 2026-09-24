@@ -20,7 +20,7 @@ function historyHtml(runs, activeId) {
       ? `${run.id === activeId ? '<span class="tag">Active</span>' : `<button class="button small" type="button" data-open="${escapeHtml(run.id)}">Open</button>`} <a class="button small" href="${api.exportUrl(run.id)}" download>JSON</a>`
       : '';
     const models = (run.request?.models || []).length;
-    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''}${run.request?.rebalance_every_folds > 1 ? ` · ${cadence(run.request.rebalance_every_folds)}` : ''}${run.request?.hold_buffer ? ` · buffer ${escapeHtml(run.request.hold_buffer)}` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
+    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''}${run.request?.rebalance_every_folds > 1 ? ` · ${cadence(run.request.rebalance_every_folds)}` : ''}${run.request?.hold_buffer ? ` · buffer ${escapeHtml(run.request.hold_buffer)}` : ''}${run.request?.neutralize_volatility ? ' · vol-neutral' : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
       <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}${run.headline ? `<div class="run-headline"><span>${escapeHtml(run.headline.label)}</span> IC <b>${num(run.headline.mean_rank_ic, 3)}</b> · SR <b>${num(run.headline.net_sharpe, 2)}</b> <span class="muted">vs ${num(run.headline.benchmark_sharpe, 2)}</span></div>` : ''}</td>
       <td><div class="run-actions">${actions}</div></td></tr>`;
   }).join('')}</tbody></table>`;
@@ -131,6 +131,7 @@ export default {
                 <div class="form-grid">
                   <label class="field">Rebalance <select name="rebalance_every_folds"><option value="1">Monthly</option><option value="2">Every two months</option><option value="3">Quarterly</option></select></label>
                   <label class="field">Holding buffer <select name="hold_buffer"><option value="">None: trade to the top N</option><option value="1.5">Keep while in top 1.5 × N</option><option value="2">Keep while in top 2 × N</option></select></label>
+                  <label class="check full"><input type="checkbox" name="neutralize_volatility"> Neutralise scores to volatility, so the sleeve cannot win just by holding the riskiest stocks</label>
                   <label class="field">Max names per sector <select name="max_per_sector"><option value="">No cap</option>${[2, 3, 4, 5].map((cap) => raw(`<option value="${cap}">${cap}</option>`))}</select></label>
                 </div>
               </details>
@@ -166,6 +167,7 @@ export default {
         rules.get('rebalance_every_folds') !== '1' ? cadence(Number(rules.get('rebalance_every_folds'))) : 'monthly',
         rules.get('hold_buffer') ? `buffer ${rules.get('hold_buffer')}×` : 'no buffer',
         rules.get('max_per_sector') ? `≤${rules.get('max_per_sector')} per sector` : 'no sector cap',
+        ...(rules.get('neutralize_volatility') === 'on' ? ['volatility-neutral'] : []),
       ];
       document.getElementById('rules-summary').textContent = parts.join(' · ');
       const chosen = new Set(new FormData(form).getAll('models'));
@@ -196,6 +198,7 @@ export default {
         top_n: Number(data.get('top_n')),
         max_per_sector: data.get('max_per_sector') ? Number(data.get('max_per_sector')) : null,
         rebalance_every_folds: Number(data.get('rebalance_every_folds') || 1),
+        neutralize_volatility: data.get('neutralize_volatility') === 'on',
         hold_buffer: data.get('hold_buffer') ? Math.round(Number(data.get('top_n')) * Number(data.get('hold_buffer'))) : null,
         transaction_cost_bps: Number(data.get('transaction_cost_bps')),
       };

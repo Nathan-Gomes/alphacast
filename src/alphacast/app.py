@@ -47,6 +47,7 @@ class RunPayload(BaseModel):
     max_per_sector: int | None = Field(default=None, ge=1, le=20)
     rebalance_every_folds: int = Field(default=1, ge=1, le=3)
     hold_buffer: int | None = Field(default=None, ge=1, le=150)
+    neutralize_volatility: bool = False
     transaction_cost_bps: float = Field(default=10.0, ge=0, le=250)
 
     @field_validator("start", "end")
@@ -191,6 +192,7 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         max_per_sector=payload.max_per_sector,
         rebalance_every_folds=payload.rebalance_every_folds,
         hold_buffer=payload.hold_buffer,
+        neutralize_volatility=payload.neutralize_volatility,
     )
     name = payload.name.strip() or f"{payload.source.title()} · {len(models)} models"
     try:
