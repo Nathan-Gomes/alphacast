@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -19,6 +20,13 @@ from .universe import DEFAULT_UNIVERSE, UNIVERSES
 
 WEB_DIRECTORY = Path(__file__).with_name("web")
 MAX_TICKERS = 150
+# Seconds per model for a 98-stock snapshot run on a multi-core laptop. The interface
+# multiplies them by SPEED_FACTOR, set per deployment, to show an honest estimate.
+MODEL_SECONDS = {
+    "momentum": 2, "ridge": 3, "elastic_net": 6, "random_forest": 17, "gradient_boosting": 21,
+}
+# Render sets RENDER=true; its small instances are roughly ten times slower.
+SPEED_FACTOR = float(os.environ.get("ALPHACAST_SPEED_FACTOR") or (12 if os.environ.get("RENDER") else 1.5))
 
 
 class RunPayload(BaseModel):
@@ -63,6 +71,7 @@ def health() -> dict[str, object]:
         "status": "ok",
         "service": "alphacast",
         "version": __version__,
+        "commit": os.environ.get("RENDER_GIT_COMMIT", "")[:7] or None,
         "models": list(SUPPORTED_MODELS),
         "default_workspace": default is not None,
     }
@@ -73,7 +82,16 @@ def catalog() -> dict[str, object]:
     """Everything the run form needs: universes, models, sources, features."""
     return {
         "universes": [{"id": key, **value} for key, value in UNIVERSES.items()],
-        "models": [{"id": model, "label": MODEL_LABELS[model]} for model in SUPPORTED_MODELS],
+        "models": [
+            {
+                "id": model,
+                "label": MODEL_LABELS[model],
+                "seconds": round(MODEL_SECONDS[model] * SPEED_FACTOR),
+                "default": model in {"momentum", "ridge", "elastic_net"},
+            }
+            for model in SUPPORTED_MODELS
+        ],
+        "overhead_seconds": round(3 * SPEED_FACTOR),
         "features": [{"id": key, "label": value} for key, value in FEATURE_LABELS.items()],
         "sources": [
             {"id": "snapshot", "label": "Frozen snapshot", "detail": "Shipped Yahoo history. Instant and reproducible."},

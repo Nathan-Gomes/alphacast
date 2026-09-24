@@ -52,3 +52,20 @@ def sampled_training_rows(
     eligible = dates[dates <= train_end]
     kept = eligible[::-1][::stride_sessions]
     return panel.loc[panel.date.isin(kept)].copy()
+
+
+class TrainingSampler:
+    """Vectorised ``sampled_training_rows`` for many folds over one panel."""
+
+    def __init__(self, panel: pd.DataFrame, stride_sessions: int) -> None:
+        if stride_sessions < 1:
+            raise ValueError("Training stride must be at least one session.")
+        self.panel = panel
+        self.stride = stride_sessions
+        self.dates = pd.DatetimeIndex(panel.date.unique()).sort_values()
+        self.codes = self.dates.get_indexer(panel.date)
+
+    def rows(self, train_end: pd.Timestamp) -> pd.DataFrame:
+        end = self.dates.searchsorted(train_end, side="right") - 1
+        mask = (self.codes <= end) & ((end - self.codes) % self.stride == 0)
+        return self.panel.loc[mask]

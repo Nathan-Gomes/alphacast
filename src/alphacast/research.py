@@ -20,10 +20,17 @@ from .features import (
     factor_percentiles,
     latest_cross_section,
     research_ready,
+    with_cross_sectional_ranks,
 )
 from .portfolio import top_ranked_portfolio
-from .ranking import fit_ranker, importance_from_attribution, quintile_labels, rank_diagnostics
-from .validation import expanding_folds, sampled_training_rows
+from .ranking import (
+    fit_ranker,
+    importance_from_attribution,
+    quintile_labels,
+    rank_diagnostics,
+    training_target,
+)
+from .validation import TrainingSampler, expanding_folds
 
 Progress = Callable[[float, str], None]
 
@@ -349,9 +356,16 @@ def run_research(
     )
     if not folds:
         raise RuntimeError("The research run did not create an out-of-sample fold.")
-    live_rows = latest_cross_section(full_panel)
+    live_rows = with_cross_sectional_ranks(latest_cross_section(full_panel))
     signal_date = live_rows.date.iloc[0]
     live_train_end = panel.date.max()
+    # Ranks, clipped labels and market-volatility history depend only on their own
+    # date, so they are computed once here rather than inside every fold and model.
+    panel = with_cross_sectional_ranks(panel)
+    panel["training_target"] = training_target(panel)
+    sampler = TrainingSampler(panel, config.train_stride_sessions)
+    market_volatility_by_date = panel.drop_duplicates("date").set_index("date").market_volatility_20
+    test_rows = dict(tuple(panel.groupby("date")))
 
     periods: list[dict[str, object]] = []
     history: list[pd.DataFrame] = []
@@ -367,16 +381,17 @@ def run_research(
         last_ranks: pd.Series | None = None
         ranker = None
         for index, fold in enumerate(folds):
-            train = sampled_training_rows(panel, fold.train_end, config.train_stride_sessions)
-            test = panel.loc[panel.date == fold.test_date]
-            volatility_cutoff = train.drop_duplicates("date").market_volatility_20.median()
+            test = test_rows[fold.test_date]
+            volatility_cutoff = market_volatility_by_date.loc[: fold.train_end].median()
             market_return = float(test.market_return_63.iloc[0])
             market_volatility = float(test.market_volatility_20.iloc[0])
             direction = "Expansion" if market_return >= 0 else "Contraction"
             volatility = "high vol" if market_volatility > volatility_cutoff else "low vol"
 
             if ranker is None or index % max(config.refit_every_folds, 1) == 0:
-                ranker = fit_ranker(model_name, train, random_seed=config.random_seed)
+                ranker = fit_ranker(
+                    model_name, sampler.rows(fold.train_end), random_seed=config.random_seed
+                )
                 fitted_through = fold.train_end
             scores = ranker.score(test)
             importance = importance_from_attribution(ranker.attribution(test))
@@ -433,8 +448,9 @@ def run_research(
         # Live signal: fit on every label already realised at the latest close. No
         # embargo is needed because the live cross-section has no known label yet.
         report(0.05 + 0.9 * completed / steps, f"{label}: scoring {signal_date.date().isoformat()}")
-        live_train = sampled_training_rows(panel, live_train_end, config.train_stride_sessions)
-        ranker = fit_ranker(model_name, live_train, random_seed=config.random_seed)
+        ranker = fit_ranker(
+            model_name, sampler.rows(live_train_end), random_seed=config.random_seed
+        )
         live_scores = ranker.score(live_rows)
         contributions = ranker.attribution(live_rows)
         order = live_scores.rank(ascending=False, method="first").astype(int)

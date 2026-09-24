@@ -27,3 +27,27 @@ def test_all_supported_models_share_one_research_contract():
     assert run.periods.groupby("model").date.nunique().nunique() == 1
     assert set(run.regimes.model) == set(config.models)
     assert set(run.monitoring.model) == set(config.models)
+
+
+def test_batched_attribution_matches_one_feature_at_a_time():
+    import numpy as np
+
+    from alphacast.features import (
+        FEATURE_COLUMNS,
+        build_panel,
+        cross_sectional_ranks,
+        research_ready,
+    )
+    from alphacast.ranking import fit_ranker
+
+    panel = research_ready(build_panel(synthetic_prices(sessions=500, securities=15)))
+    train = panel[panel.date < panel.date.max()]
+    rows = panel[panel.date == panel.date.max()]
+    ranker = fit_ranker("gradient_boosting", train)
+    batched = ranker.attribution(rows)
+    matrix = cross_sectional_ranks(rows).to_numpy()
+    base = ranker.estimator.predict(matrix)
+    for position, feature in enumerate(FEATURE_COLUMNS):
+        occluded = matrix.copy()
+        occluded[:, position] = 0.0
+        assert np.allclose(batched[feature], base - ranker.estimator.predict(occluded))

@@ -3,7 +3,12 @@ import { date, escapeHtml, html, raw } from '../format.js';
 import { statusBadge } from './parts.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const RUN_ESTIMATE = 'Frozen-snapshot runs of all five models take one to three minutes; tree models are the slow part.';
+
+function duration(seconds) {
+  if (seconds < 90) return `${Math.max(5, Math.round(seconds / 5) * 5)} seconds`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+}
 
 function historyHtml(runs, activeId) {
   if (!runs.length) return '<p class="empty">No runs yet.</p>';
@@ -44,7 +49,7 @@ export default {
     ctx.el.innerHTML = html`
       <div class="grid cols-main">
         <section class="panel">
-          <div class="panel-head"><div><h2>New research run</h2><p>Every model runs on the same expanding, embargoed monthly folds. ${RUN_ESTIMATE}</p></div></div>
+          <div class="panel-head"><div><h2>New research run</h2><p>Every model runs on the same expanding, embargoed monthly folds, one run at a time.</p></div></div>
           <form class="panel-body" id="run-form" novalidate>
             <div class="form-grid">
               <label class="field full">Run name <input type="text" name="name" maxlength="60" placeholder="e.g. Starter 30, 25 bps costs"></label>
@@ -61,13 +66,14 @@ export default {
               <label class="field">Start date <input type="date" name="start" value="${catalog.defaults.start}" min="2000-01-01"></label>
               <label class="field">End date <input type="date" name="end" value="${today()}"></label>
               <fieldset class="field full" style="border:0;padding:0;margin:0"><legend style="margin-bottom:6px">Models</legend>
-                <div class="model-checks">${catalog.models.map((model) => raw(html`<label class="check"><input type="checkbox" name="models" value="${model.id}" checked> ${model.label}</label>`))}</div>
+                <div class="model-checks">${catalog.models.map((model) => raw(html`<label class="check" title="About ${duration(model.seconds)} on this server"><input type="checkbox" name="models" value="${model.id}" ${raw(model.default ? 'checked' : '')}> ${model.label}${raw(model.seconds >= 60 ? ' <span class="tag">slower</span>' : '')}</label>`))}</div>
               </fieldset>
               <label class="field">Portfolio size (top N) <input type="number" name="top_n" min="3" max="40" value="${catalog.defaults.top_n}"></label>
               <label class="field">One-way cost (bps) <input type="number" name="transaction_cost_bps" min="0" max="250" step="1" value="${catalog.defaults.transaction_cost_bps}"></label>
             </div>
             <p class="form-error" id="form-error" role="alert"></p>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="button primary" type="submit" id="submit">Run study</button><span class="muted" style="font-size:12.5px">Runs live in server memory and reset when the service restarts. Export anything you want to keep.</span></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="button primary" type="submit" id="submit">Run study</button><span class="muted" style="font-size:12.5px" id="estimate" aria-live="polite"></span></div>
+            <p class="note">Runs live in server memory and reset when the service restarts. Export anything you want to keep.</p>
           </form>
         </section>
         <section class="panel">
@@ -86,6 +92,13 @@ export default {
       custom.hidden = source !== 'yahoo';
       if (source !== 'yahoo' && form.universe.value === 'custom') form.universe.value = 'us_large_cap';
       document.getElementById('tickers-field').hidden = !(source === 'yahoo' && form.universe.value === 'custom');
+      const chosen = new Set(new FormData(form).getAll('models'));
+      const seconds = catalog.overhead_seconds + catalog.models.filter((model) => chosen.has(model.id)).reduce((sum, model) => sum + model.seconds, 0)
+        + (source === 'yahoo' ? 20 : 0);
+      const waiting = ctx.runs.filter((run) => run.status === 'queued' || run.status === 'running').length;
+      document.getElementById('estimate').textContent = chosen.size
+        ? `Estimated ${duration(seconds)}${source === 'yahoo' ? ' plus download time' : ''}${waiting ? ` after ${waiting} run${waiting === 1 ? '' : 's'} ahead in the queue` : ''}.`
+        : '';
     };
     form.addEventListener('change', sync);
     sync();

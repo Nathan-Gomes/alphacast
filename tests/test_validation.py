@@ -27,3 +27,13 @@ def test_a_month_truncated_by_missing_labels_is_not_a_fold():
     same_month = calendar[calendar.dt.to_period("M") == last_ready.to_period("M")]
     if same_month.max() > last_ready:
         assert folds[-1].test_date < last_ready.to_period("M").start_time
+
+
+def test_vectorised_sampler_matches_reference_selection():
+    from alphacast.validation import TrainingSampler, sampled_training_rows
+
+    panel = research_ready(build_panel(synthetic_prices(sessions=700, securities=12)))
+    sampler = TrainingSampler(panel, 5)
+    for fold in expanding_folds(panel)[::4]:
+        expected = sampled_training_rows(panel, fold.train_end, 5)
+        assert sampler.rows(fold.train_end).index.equals(expected.index)

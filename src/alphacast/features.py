@@ -22,6 +22,7 @@ FEATURE_COLUMNS = [
     "sector_relative_63",
 ]
 TARGET_COLUMN = "forward_sector_excess_20"
+RANK_COLUMNS = [f"rank_{column}" for column in FEATURE_COLUMNS]
 
 FEATURE_LABELS = {
     "return_21": "1M return",
@@ -127,8 +128,20 @@ def cross_sectional_ranks(rows: pd.DataFrame) -> pd.DataFrame:
     Raw levels drift over a decade (dollar volume grows, volatility regimes shift). A
     within-date rank keeps only the ordering that a cross-sectional model can use.
     """
+    if set(RANK_COLUMNS).issubset(rows.columns):
+        return rows[RANK_COLUMNS].set_axis(FEATURE_COLUMNS, axis=1)
     ranked = rows.groupby("date")[FEATURE_COLUMNS].rank(pct=True) - 0.5
     return ranked.fillna(0.0)
+
+
+def with_cross_sectional_ranks(rows: pd.DataFrame) -> pd.DataFrame:
+    """Attach within-date ranks once so every fold and model can reuse them.
+
+    A rank depends only on its own date, never on the training window, so computing it
+    once for the whole panel is identical to computing it inside each fit.
+    """
+    ranked = rows.groupby("date")[FEATURE_COLUMNS].rank(pct=True).sub(0.5).fillna(0.0)
+    return rows.assign(**{f"rank_{column}": ranked[column] for column in FEATURE_COLUMNS})
 
 
 def factor_percentiles(rows: pd.DataFrame) -> pd.DataFrame:

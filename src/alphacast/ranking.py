@@ -57,6 +57,8 @@ def training_target(train: pd.DataFrame) -> pd.Series:
     One takeover or earnings gap can dominate a squared-error fit. Clipping applies to
     training labels only; every evaluation uses the unclipped realised outcome.
     """
+    if "training_target" in train.columns:
+        return train["training_target"]
     target = train[TARGET_COLUMN]
     by_date = target.groupby(train.date)
     return target.clip(by_date.transform("quantile", 0.025), by_date.transform("quantile", 0.975))
@@ -86,12 +88,13 @@ class FittedRanker:
             contributions["momentum_12_1"] = momentum_score(rows) - 0.5
             return contributions
         matrix = cross_sectional_ranks(rows).to_numpy()
-        base = self.estimator.predict(matrix)
-        contributions = np.empty_like(matrix)
-        for column in range(matrix.shape[1]):
-            occluded = matrix.copy()
-            occluded[:, column] = 0.0
-            contributions[:, column] = base - self.estimator.predict(occluded)
+        count, features = matrix.shape
+        # One predict call over every occluded copy: per-call overhead dominates for trees.
+        stacked = np.tile(matrix, (features + 1, 1))
+        for column in range(features):
+            stacked[(column + 1) * count : (column + 2) * count, column] = 0.0
+        predictions = self.estimator.predict(stacked).reshape(features + 1, count)
+        contributions = (predictions[0] - predictions[1:]).T
         return pd.DataFrame(contributions, index=rows.index, columns=FEATURE_COLUMNS)
 
 
