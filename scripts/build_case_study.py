@@ -175,6 +175,7 @@ def main(output: Path) -> None:
         {"label": "Random Forest, net", "color": COLORS["random_forest"], "values": cumulative([r["net_return"] for r in rf_periods]), "end": f"${cumulative([r['net_return'] for r in rf_periods])[-1]:.1f}", "width": 2.4},
         {"label": "Momentum 12-1, net", "color": COLORS["momentum"], "values": cumulative([r["net_return"] for r in periods["momentum"]]), "end": f"${cumulative([r['net_return'] for r in periods['momentum']])[-1]:.1f}"},
         {"label": "Equal-weight universe", "color": "#7d858c", "values": cumulative([r["benchmark_return"] for r in rf_periods]), "end": f"${cumulative([r['benchmark_return'] for r in rf_periods])[-1]:.1f}", "dash": True},
+        {"label": f"Universe at Random Forest's beta ({rf['beta']:.2f}x)", "color": "#b4b8bc", "values": cumulative([rf["beta"] * r["benchmark_return"] for r in rf_periods]), "end": f"${cumulative([rf['beta'] * r['benchmark_return'] for r in rf_periods])[-1]:.1f}", "dash": True},
     ]
     growth_svg = line_chart(growth, dates, y_format=lambda v: f"${v:g}", label="Growth of one dollar: Random Forest and momentum top-15 sleeves net of costs against the equal-weight universe", log=True)
 
