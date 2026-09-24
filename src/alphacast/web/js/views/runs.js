@@ -22,7 +22,7 @@ function historyHtml(runs, activeId) {
     const models = (run.request?.models || []).length;
     return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
       <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}</td>
-      <td class="num">${actions}</td></tr>`;
+      <td><div class="run-actions">${actions}</div></td></tr>`;
   }).join('')}</tbody></table>`;
 }
 
@@ -53,10 +53,10 @@ export default {
           <form class="panel-body" id="run-form" novalidate>
             <div class="form-grid">
               <label class="field full">Run name <input type="text" name="name" maxlength="60" placeholder="e.g. Starter 30, 25 bps costs"></label>
-              <fieldset class="field full" style="border:0;padding:0;margin:0"><legend style="margin-bottom:6px">Data source</legend>
+              <fieldset class="field full fieldset-plain"><legend>Data source</legend>
                 <div class="choice-list">${catalog.sources.map((source, i) => raw(html`<label class="choice"><input type="radio" name="source" value="${source.id}" ${raw(i === 0 ? 'checked' : '')}><span><strong>${source.label}</strong><small>${source.detail}</small></span></label>`))}</div>
               </fieldset>
-              <fieldset class="field full" id="universe-field" style="border:0;padding:0;margin:0"><legend style="margin-bottom:6px">Universe</legend>
+              <fieldset class="field full fieldset-plain" id="universe-field"><legend>Universe</legend>
                 <div class="choice-list">
                   ${catalog.universes.map((universe, i) => raw(html`<label class="choice"><input type="radio" name="universe" value="${universe.id}" ${raw(i === 0 ? 'checked' : '')}><span><strong>${universe.label}</strong><small>${universe.description}</small></span></label>`))}
                   <label class="choice" id="custom-choice"><input type="radio" name="universe" value="custom"><span><strong>Custom tickers</strong><small>Yahoo Finance only. 10 to 150 symbols; sectors resolve from Yahoo metadata when unknown.</small></span></label>
@@ -65,7 +65,7 @@ export default {
               <label class="field full" id="tickers-field" hidden>Tickers <textarea name="tickers" rows="3" spellcheck="false" placeholder="AAPL, MSFT, NVDA, …"></textarea></label>
               <label class="field">Start date <input type="date" name="start" value="${catalog.defaults.start}" min="2000-01-01"></label>
               <label class="field">End date <input type="date" name="end" value="${today()}"></label>
-              <fieldset class="field full" style="border:0;padding:0;margin:0"><legend style="margin-bottom:6px">Models</legend>
+              <fieldset class="field full fieldset-plain"><legend>Models</legend>
                 <div class="model-checks">${catalog.models.map((model) => raw(html`<label class="check" title="About ${duration(model.seconds)} on this server"><input type="checkbox" name="models" value="${model.id}" ${raw(model.default ? 'checked' : '')}> ${model.label}${raw(model.seconds >= 60 ? ' <span class="tag">slower</span>' : '')}</label>`))}</div>
               </fieldset>
               <label class="field">Portfolio size (top N) <input type="number" name="top_n" min="3" max="40" value="${catalog.defaults.top_n}"></label>
@@ -73,7 +73,7 @@ export default {
               <label class="field">One-way cost (bps) <input type="number" name="transaction_cost_bps" min="0" max="250" step="1" value="${catalog.defaults.transaction_cost_bps}"></label>
             </div>
             <p class="form-error" id="form-error" role="alert"></p>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="button primary" type="submit" id="submit">Run study</button><span class="muted" style="font-size:12.5px" id="estimate" aria-live="polite"></span></div>
+            <div class="form-actions"><button class="button primary" type="submit" id="submit">Run study</button><span class="muted" id="estimate" aria-live="polite"></span></div>
             <p class="note">Runs live in server memory and reset when the service restarts. Export anything you want to keep.</p>
           </form>
         </section>

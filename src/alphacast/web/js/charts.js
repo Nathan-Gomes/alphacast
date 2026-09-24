@@ -272,3 +272,21 @@ export function hbars(items, { format = (value) => value.toFixed(2), signed = fa
     return `<div class="hbar" ${item.title ? `title="${escapeHtml(item.title)}"` : ''}><span class="name">${escapeHtml(item.label)}</span><span class="track">${bar}</span><span class="val">${escapeHtml(format(item.value))}</span></div>`;
   }).join('')}</div>`;
 }
+
+/**
+ * Two bars per row (e.g. portfolio vs universe) on one scale, with a right-hand value.
+ * items: [{ label, a, b, value, tone?, title? }]
+ */
+export function pairedBars(items, { labelA, labelB, colorA = 'var(--series-1)', colorB = 'var(--bench)', format = (value) => value }) {
+  const max = Math.max(...items.flatMap((item) => [item.a, item.b]), 1e-9);
+  return `${legend([{ label: labelA, color: colorA }, { label: labelB, color: colorB }])}
+    <div class="hbars">${items.map((item) => `
+      <div class="hbar"${item.title ? ` title="${escapeHtml(item.title)}"` : ''}>
+        <span class="name">${escapeHtml(item.label)}</span>
+        <span class="track paired">
+          <b class="bar-a" style="width:${(item.a / max) * 100}%;background:${colorA}"></b>
+          <b class="bar-b" style="width:${(item.b / max) * 100}%;background:${colorB}"></b>
+        </span>
+        <span class="val ${item.tone || ''}">${escapeHtml(format(item.value))}</span>
+      </div>`).join('')}</div>`;
+}

@@ -1,4 +1,4 @@
-import { hbars } from '../charts.js';
+import { hbars, pairedBars } from '../charts.js';
 import { liveRows } from '../data.js';
 import { html, mean, num, pct, raw, sectorShort, toneClass } from '../format.js';
 
@@ -31,7 +31,6 @@ export default {
       const held = holdings.filter((row) => row.sector === sector).length / holdings.length;
       return { sector, universe, held, active: held - universe };
     }).sort((a, b) => b.held - a.held || b.universe - a.universe);
-    const maxWeight = Math.max(...sectors.map((row) => Math.max(row.held, row.universe)), 0.01);
     const summary = index.summaries[model];
 
     ctx.el.innerHTML = html`
@@ -45,18 +44,12 @@ export default {
         ${raw(panel({ title: 'Target holdings', note: 'Weights if the book were rebalanced at the latest close.', body: '<div id="holdings"></div>', flush: true }))}
         <div class="stack">
           ${raw(panel({ title: 'Sector allocation', note: 'Portfolio weight against the equal-weight universe.', body: `
-            <div class="legend"><span><i style="background:var(--series-1)"></i>Portfolio</span><span><i style="background:var(--bench)"></i>Universe</span></div>
-            <div class="hbars">${sectors.map((row) => `
-              <div class="hbar" title="${row.sector}: portfolio ${pct(row.held, 1)}, universe ${pct(row.universe, 1)}">
-                <span class="name">${sectorShort(row.sector)}</span>
-                <span class="track" style="height:14px">
-                  <b style="left:0;top:0;height:6px;width:${(row.held / maxWeight) * 100}%;background:var(--series-1)"></b>
-                  <b style="left:0;top:8px;height:5px;width:${(row.universe / maxWeight) * 100}%;background:var(--bench)"></b>
-                </span>
-                <span class="val ${toneClass(row.active)}">${pct(row.active, 0, { sign: true })}</span>
-              </div>`).join('')}</div>
+            ${pairedBars(sectors.map((row) => ({
+              label: sectorShort(row.sector), a: row.held, b: row.universe, value: row.active, tone: toneClass(row.active),
+              title: `${row.sector}: portfolio ${pct(row.held, 1)}, universe ${pct(row.universe, 1)}`,
+            })), { labelA: 'Portfolio', labelB: 'Universe', format: (value) => pct(value, 0, { sign: true }) })}
             <p class="note">Right column: active weight vs universe. ${index.ws.config.max_per_sector ? `This run caps the sleeve at ${index.ws.config.max_per_sector} names per sector.` : 'The sleeve has no sector constraint, so concentration is a result of the ranking and worth watching. New runs can cap names per sector.'}</p>` }))}
-          ${raw(panel({ title: 'Factor tilts', note: 'Average percentile of the holdings minus the universe average of 50. Positive means the book leans that way.', body: '<div id="tilts"></div><div class="table-wrap" id="tilt-table" style="margin-top:12px"></div>' }))}
+          ${raw(panel({ title: 'Factor tilts', note: 'Average percentile of the holdings minus the universe average of 50. Positive means the book leans that way.', body: '<div id="tilts"></div><div class="table-wrap section-gap" id="tilt-table"></div>' }))}
           ${raw(panel({ title: 'Entering', note: 'New to the book at this signal.', body: '<div id="entering"></div>', flush: true }))}
           ${raw(panel({ title: 'Exiting', note: 'Held at the last rebalance, now outside the top ranks.', body: '<div id="exiting"></div>', flush: true }))}
         </div>

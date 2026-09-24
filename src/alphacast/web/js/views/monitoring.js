@@ -1,4 +1,4 @@
-import { legend, lineChart } from '../charts.js';
+import { legend, lineChart, pairedBars } from '../charts.js';
 import { modelColor } from '../data.js';
 import { escapeHtml, html, num, pct, raw, rolling, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
@@ -19,7 +19,7 @@ export default {
     const importance = [...index.importance[model]].sort((a, b) => b.importance - a.importance);
 
     ctx.el.innerHTML = html`
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:16px" id="cards"></div>
+      <div class="grid model-cards" id="cards"></div>
       <div class="grid cols-main">
         ${raw(panel({ title: `Rolling ${window}-month Rank IC`, note: `${index.labels[model]}. The shaded band is the full-sample mean ± one standard error for a ${window}-month window; falling below it triggers “watch”, below zero triggers “degraded”.`, body: '<div id="roll-legend"></div><div id="rolling"></div>' }))}
         ${raw(panel({ title: 'Reliance drift', note: `Share of attribution over the last ${window} folds against the full history.`, body: '<div id="reliance"></div>' }))}
@@ -28,11 +28,11 @@ export default {
 
     document.getElementById('cards').innerHTML = index.models.map((id) => {
       const row = index.monitoring[id];
-      return `<button type="button" class="panel model-card" data-model="${id}" style="text-align:left;padding:14px 16px;cursor:pointer;color:inherit;font:inherit;${id === model ? 'border-color:var(--accent)' : ''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong style="font-size:13px"><span class="dot" style="background:${modelColor(id)}"></span>${escapeHtml(index.labels[id])}</strong>${statusBadge(row.status)}</div>
-        <div style="margin-top:10px;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums">${num(row.recent_mean_rank_ic, 3)}</div>
-        <div class="muted" style="font-size:12px">Recent IC · history ${num(row.historical_mean_rank_ic, 3)} (<span class="${toneClass(row.rank_ic_change)}">${num(row.rank_ic_change, 3, { sign: true })}</span>)</div>
-        <div class="muted" style="font-size:12px;margin-top:4px">${pct(row.recent_positive_ic_rate, 0)} positive · turnover ${pct(row.recent_turnover, 0)}</div>
+      return `<button type="button" class="panel model-card" data-model="${id}" aria-pressed="${id === model}">
+        <div class="model-card-head"><strong><span class="dot" style="background:${modelColor(id)}"></span>${escapeHtml(index.labels[id])}</strong>${statusBadge(row.status)}</div>
+        <div class="model-card-value">${num(row.recent_mean_rank_ic, 3)}</div>
+        <div class="model-card-sub">Recent IC · history ${num(row.historical_mean_rank_ic, 3)} (<span class="${toneClass(row.rank_ic_change)}">${num(row.rank_ic_change, 3, { sign: true })}</span>)</div>
+        <div class="model-card-sub">${pct(row.recent_positive_ic_rate, 0)} positive · turnover ${pct(row.recent_turnover, 0)}</div>
       </button>`;
     }).join('');
     document.querySelectorAll('.model-card').forEach((card) => card.addEventListener('click', () => ctx.setModel(card.dataset.model)));
@@ -50,18 +50,10 @@ export default {
     });
 
     const top = importance.slice(0, 9);
-    const max = Math.max(...top.flatMap((row) => [row.importance, row.recent_importance]), 0.01);
-    document.getElementById('reliance').innerHTML = `
-      <div class="legend"><span><i style="background:${modelColor(model)}"></i>Last ${window} folds</span><span><i style="background:var(--bench)"></i>Full history</span></div>
-      <div class="hbars">${top.map((row) => `
-        <div class="hbar" title="${escapeHtml(row.label)}: recent ${pct(row.recent_importance, 1)}, history ${pct(row.importance, 1)}">
-          <span class="name">${escapeHtml(row.label)}</span>
-          <span class="track" style="height:14px">
-            <b style="left:0;top:0;height:6px;width:${(row.recent_importance / max) * 100}%;background:${modelColor(model)}"></b>
-            <b style="left:0;top:8px;height:5px;width:${(row.importance / max) * 100}%;background:var(--bench)"></b>
-          </span>
-          <span class="val">${num((row.recent_importance - row.importance) * 100, 1, { sign: true })}</span>
-        </div>`).join('')}</div>
+    document.getElementById('reliance').innerHTML = `${pairedBars(top.map((row) => ({
+      label: row.label, a: row.recent_importance, b: row.importance, value: (row.recent_importance - row.importance) * 100,
+      title: `${row.label}: recent ${pct(row.recent_importance, 1)}, history ${pct(row.importance, 1)}`,
+    })), { labelA: `Last ${window} folds`, labelB: 'Full history', colorA: modelColor(model), format: (value) => num(value, 1, { sign: true }) })}
       <p class="note">Right column: change in percentage points of attribution share.</p>`;
 
     dataTable(document.getElementById('drift'), {

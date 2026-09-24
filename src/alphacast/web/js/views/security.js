@@ -88,8 +88,8 @@ export default {
 
     document.getElementById('model-ranks').innerHTML = index.models.map((id) => {
       const row = index.live[id].find((item) => item.ticker === ticker);
-      return `<button type="button" class="model-rank${id === model ? ' active' : ''}" data-model="${id}" style="text-align:left;background:none;cursor:pointer;color:inherit;font:inherit">
-        <span><i class="dot" style="background:${modelColor(id)}"></i>${index.labels[id]}</span><strong>#${row.rank}</strong> <span style="display:inline">Q${row.quintile}</span></button>`;
+      return `<button type="button" class="model-rank${id === model ? ' active' : ''}" data-model="${id}" aria-pressed="${id === model}">
+        <span><i class="dot" style="background:${modelColor(id)}"></i>${index.labels[id]}</span><strong>#${row.rank}</strong> <em>Q${row.quintile}</em></button>`;
     }).join('');
     document.querySelectorAll('.model-rank').forEach((button) => button.addEventListener('click', () => ctx.setModel(button.dataset.model)));
 
