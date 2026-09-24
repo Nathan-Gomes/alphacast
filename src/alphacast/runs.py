@@ -78,7 +78,25 @@ class RunRecord:
             "request": self.request,
             "signal_date": workspace.get("signal_date"),
             "dataset": workspace.get("dataset"),
+            "headline": _headline(workspace),
         }
+
+
+def _headline(workspace: dict[str, object]) -> dict[str, object] | None:
+    """The strongest model by mean Rank IC, so runs can be compared in a list."""
+    summaries = workspace.get("summaries") or []
+    if not summaries:
+        return None
+    best = max(summaries, key=lambda row: row["mean_rank_ic"])
+    return {
+        "model": best["model"],
+        "label": best.get("label", best["model"]),
+        "mean_rank_ic": best["mean_rank_ic"],
+        "ic_t_stat": best["ic_t_stat"],
+        "net_sharpe": best["net_sharpe"],
+        "benchmark_sharpe": best["benchmark_sharpe"],
+        "mean_turnover": best["mean_turnover"],
+    }
 
 
 def dataset_label(source: str, universe: str, tickers: int) -> str:

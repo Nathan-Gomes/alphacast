@@ -445,3 +445,5 @@ details.advanced[open] > summary::before { transform: rotate(90deg); }
 details.advanced > summary > span:first-child { margin-right: auto; }
 details.advanced > summary .muted { font-size: 12px; font-weight: 400; }
 details.advanced[open] { padding-bottom: 12px; }
+.run-headline { margin-top: 6px; font-size: 12px; color: var(--ink-2); white-space: normal; }
+.run-headline b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }

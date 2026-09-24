@@ -47,6 +47,7 @@ def test_a_submitted_run_completes_and_exports():
     assert created.status_code == 202
     record = wait_for(created.json()["id"])
     assert record["status"] == "complete", record["error"]
+    assert record["headline"]["model"] in {"momentum", "ridge"}
     assert {row["model"] for row in record["workspace"]["summaries"]} == {"momentum", "ridge"}
     export = client.get(f"/api/runs/{record['id']}/export")
     assert export.status_code == 200

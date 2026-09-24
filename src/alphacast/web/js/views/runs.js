@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { cadence, date, escapeHtml, html, raw } from '../format.js';
+import { cadence, date, escapeHtml, html, num, raw } from '../format.js';
 import { statusBadge } from './parts.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -21,7 +21,7 @@ function historyHtml(runs, activeId) {
       : '';
     const models = (run.request?.models || []).length;
     return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''}${run.request?.rebalance_every_folds > 1 ? ` · ${cadence(run.request.rebalance_every_folds)}` : ''}${run.request?.hold_buffer ? ` · buffer ${escapeHtml(run.request.hold_buffer)}` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
-      <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}</td>
+      <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}${run.headline ? `<div class="run-headline"><span>${escapeHtml(run.headline.label)}</span> IC <b>${num(run.headline.mean_rank_ic, 3)}</b> · SR <b>${num(run.headline.net_sharpe, 2)}</b> <span class="muted">vs ${num(run.headline.benchmark_sharpe, 2)}</span></div>` : ''}</td>
       <td><div class="run-actions">${actions}</div></td></tr>`;
   }).join('')}</tbody></table>`;
 }
