@@ -2,6 +2,7 @@
 
 import { api } from './api.js';
 import { hideTooltip } from './charts.js';
+import { initPalette } from './palette.js';
 import { workspaceIndex, leadingModel } from './data.js';
 import { date, escapeHtml, html, int } from './format.js';
 import overview from './views/overview.js';
@@ -222,6 +223,9 @@ function syncThemeButton() {
 
 function bindShell() {
   syncThemeButton();
+  const palette = initPalette(() => ({ index: state.index, navigate, setModel }));
+  $('search-button').addEventListener('click', () => palette.open());
+  if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('search-button').querySelector('kbd').textContent = 'Ctrl K';
   window.addEventListener('hashchange', render);
   $('run-select').addEventListener('change', (event) => openRun(event.target.value));
   $('model-select').addEventListener('change', (event) => setModel(event.target.value));
