@@ -183,6 +183,13 @@ async function refreshRuns() {
     toast(`Could not reach the server: ${error.message}`);
     return;
   }
+  const listed = new Set(state.runs.map((run) => run.id));
+  for (const id of [...state.watching]) {
+    if (!listed.has(id)) {
+      state.watching.delete(id);
+      toast('The server restarted and that run was lost. Runs live in memory, so start it again.', 8000);
+    }
+  }
   for (const run of state.runs) {
     if (state.watching.has(run.id) && run.status !== 'queued' && run.status !== 'running') {
       state.watching.delete(run.id);
