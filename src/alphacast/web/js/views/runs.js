@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { date, escapeHtml, html, raw } from '../format.js';
+import { cadence, date, escapeHtml, html, raw } from '../format.js';
 import { statusBadge } from './parts.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -20,7 +20,7 @@ function historyHtml(runs, activeId) {
       ? `${run.id === activeId ? '<span class="tag">Active</span>' : `<button class="button small" type="button" data-open="${escapeHtml(run.id)}">Open</button>`} <a class="button small" href="${api.exportUrl(run.id)}" download>JSON</a>`
       : '';
     const models = (run.request?.models || []).length;
-    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
+    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''}${run.request?.rebalance_every_folds > 1 ? ` · ${cadence(run.request.rebalance_every_folds)}` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
       <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}</td>
       <td><div class="run-actions">${actions}</div></td></tr>`;
   }).join('')}</tbody></table>`;
@@ -70,6 +70,7 @@ export default {
               </fieldset>
               <label class="field">Portfolio size (top N) <input type="number" name="top_n" min="3" max="40" value="${catalog.defaults.top_n}"></label>
               <label class="field">Max names per sector <select name="max_per_sector"><option value="">No cap</option>${[2, 3, 4, 5].map((cap) => raw(`<option value="${cap}">${cap}</option>`))}</select></label>
+              <label class="field">Rebalance <select name="rebalance_every_folds"><option value="1">Monthly</option><option value="2">Every two months</option><option value="3">Quarterly</option></select></label>
               <label class="field">One-way cost (bps) <input type="number" name="transaction_cost_bps" min="0" max="250" step="1" value="${catalog.defaults.transaction_cost_bps}"></label>
             </div>
             <p class="form-error" id="form-error" role="alert"></p>
@@ -120,6 +121,7 @@ export default {
         models,
         top_n: Number(data.get('top_n')),
         max_per_sector: data.get('max_per_sector') ? Number(data.get('max_per_sector')) : null,
+        rebalance_every_folds: Number(data.get('rebalance_every_folds') || 1),
         transaction_cost_bps: Number(data.get('transaction_cost_bps')),
       };
       if (!models.length) { error.textContent = 'Select at least one model.'; return; }

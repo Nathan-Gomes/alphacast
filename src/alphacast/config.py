@@ -36,6 +36,8 @@ class ResearchConfig:
     # the most recent fit. A stale fit only uses older data, so it cannot leak.
     refit_every_folds: int = 3
     rebalance: str = "monthly"
+    # Trade the sleeve every Nth monthly fold and hold it in between (1 = monthly).
+    rebalance_every_folds: int = 1
     top_n: int = 15
     # Optional cap on names per sector in the top-ranked sleeve; None means no cap.
     max_per_sector: int | None = None

@@ -65,3 +65,21 @@ def top_ranked_portfolio(
         ),
         weights,
     )
+
+
+def hold_portfolio(rows: pd.DataFrame, weights: pd.Series) -> PortfolioStep:
+    """Carry the previous book through a month without trading: no turnover, no cost.
+
+    Weights are kept at their rebalance values; drift between rebalances is ignored,
+    as it is for the monthly sleeve's own holding period.
+    """
+    forward = rows.set_index("ticker").forward_return_20.reindex(weights.index).fillna(0.0)
+    gross = float(forward.dot(weights))
+    return PortfolioStep(
+        gross_return=gross,
+        net_return=gross,
+        benchmark_return=float(rows.forward_return_20.mean()),
+        turnover=0.0,
+        transaction_cost=0.0,
+        holdings=tuple(weights.index),
+    )

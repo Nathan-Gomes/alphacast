@@ -121,3 +121,7 @@ export function toCsv(rows, columns) {
   return [columns.map((column) => cell(column.label)).join(','),
     ...rows.map((row) => columns.map((column) => cell(column.csv ? column.csv(row) : row[column.key])).join(','))].join('\n');
 }
+
+export function cadence(everyFolds) {
+  return ({ 1: 'monthly', 2: 'every two months', 3: 'quarterly' })[everyFolds || 1] || `every ${everyFolds} months`;
+}

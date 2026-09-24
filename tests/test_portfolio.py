@@ -54,3 +54,13 @@ def test_sector_cap_fills_places_from_other_sectors():
     assert list(select_top(rows, scores, top_n=3).ticker) == ["A", "B", "C"]
     assert list(select_top(rows, scores, top_n=3, max_per_sector=1).ticker) == ["A", "D", "E"]
     assert list(select_top(rows, scores, top_n=4, max_per_sector=2).ticker) == ["A", "B", "D", "E"]
+
+
+def test_holding_a_book_costs_nothing_and_earns_its_names():
+    from alphacast.portfolio import hold_portfolio
+
+    rows = pd.DataFrame({"ticker": ["A", "B", "C"], "forward_return_20": [0.03, 0.01, -0.02]})
+    step = hold_portfolio(rows, pd.Series({"A": 0.5, "C": 0.5}))
+    assert step.turnover == 0.0 and step.transaction_cost == 0.0
+    assert abs(step.gross_return - 0.005) < 1e-12
+    assert step.net_return == step.gross_return

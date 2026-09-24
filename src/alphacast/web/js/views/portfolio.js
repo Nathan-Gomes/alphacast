@@ -1,6 +1,6 @@
 import { hbars, pairedBars } from '../charts.js';
 import { liveRows } from '../data.js';
-import { html, mean, num, pct, raw, sectorShort, toneClass } from '../format.js';
+import { cadence, html, mean, num, pct, raw, sectorShort, toneClass } from '../format.js';
 
 const median = (values) => {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
@@ -12,7 +12,7 @@ import { panel, pctBar, rankChange, tickerLink } from './parts.js';
 
 export default {
   title: 'Portfolio',
-  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}${ctx.index.ws.config.max_per_sector ? `, at most ${ctx.index.ws.config.max_per_sector} per sector` : ''}, long-only, rebalanced monthly`,
+  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}${ctx.index.ws.config.max_per_sector ? `, at most ${ctx.index.ws.config.max_per_sector} per sector` : ''}, long-only, rebalanced ${cadence(ctx.index.ws.config.rebalance_every_folds)}`,
   render(ctx) {
     const { index, model } = ctx;
     const rows = liveRows(index, model);

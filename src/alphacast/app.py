@@ -40,6 +40,7 @@ class RunPayload(BaseModel):
     models: list[str] = Field(default_factory=lambda: list(SUPPORTED_MODELS))
     top_n: int = Field(default=15, ge=3, le=40)
     max_per_sector: int | None = Field(default=None, ge=1, le=20)
+    rebalance_every_folds: int = Field(default=1, ge=1, le=3)
     transaction_cost_bps: float = Field(default=10.0, ge=0, le=250)
 
     @field_validator("start", "end")
@@ -137,6 +138,7 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         top_n=payload.top_n,
         transaction_cost_bps=payload.transaction_cost_bps,
         max_per_sector=payload.max_per_sector,
+        rebalance_every_folds=payload.rebalance_every_folds,
     )
     name = payload.name.strip() or f"{payload.source.title()} · {len(models)} models"
     record = registry.submit(

@@ -110,3 +110,10 @@ def test_signal_decay_matches_the_headline_ic_at_the_target_horizon():
     for model in ("momentum", "ridge"):
         headline = run.summaries.set_index("model").loc[model, "mean_rank_ic"]
         assert abs(decay.loc[(model, 20), "mean_rank_ic"] - headline) < 1e-9
+
+
+def test_quarterly_rebalancing_trades_only_every_third_month():
+    config = ResearchConfig(models=("momentum",), minimum_train_sessions=252, rebalance_every_folds=3)
+    run = run_research(synthetic_prices(sessions=700, securities=15), source="synthetic", config=config)
+    turnover = run.periods.sort_values("date").turnover.reset_index(drop=True)
+    assert (turnover[[i for i in range(len(turnover)) if i % 3]] == 0).all()

@@ -1,6 +1,6 @@
 import { columnChart, legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor } from '../data.js';
-import { cumulative, date, downloadFile, drawdowns, html, mean, num, pct, raw, rolling, std, toCsv, toneClass } from '../format.js';
+import { cadence, cumulative, date, downloadFile, drawdowns, html, mean, num, pct, raw, rolling, std, toCsv, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
 import { panel } from './parts.js';
 
@@ -38,7 +38,7 @@ export default {
         <div class="kpi"><div class="label">Avg monthly turnover</div><div class="value">${pct(s.mean_turnover, 0)}</div><div class="sub">Cost drag ${pct(s.annualized_cost_drag, 2)} per year</div></div>
         <div class="kpi"><div class="label">Terminal growth, net</div><div class="value ${toneClass(s.net_terminal_growth - s.benchmark_terminal_growth)}">${pct(s.net_terminal_growth, 0)}</div><div class="sub">Gross ${pct(s.gross_terminal_growth, 0)} · benchmark ${pct(s.benchmark_terminal_growth, 0)}</div></div>
       </div>
-      ${raw(panel({ title: 'Growth of $1', note: `${periods.length} monthly out-of-sample holding periods from ${date(dates[0])} to ${date(periods.at(-1).date)}. Each period holds the top ${index.ws.config.top_n} names for 20 sessions.`, body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
+      ${raw(panel({ title: 'Growth of $1', note: `${periods.length} monthly out-of-sample holding periods from ${date(dates[0])} to ${date(periods.at(-1).date)}. The top ${index.ws.config.top_n} names are rebalanced ${cadence(index.ws.config.rebalance_every_folds)} and each period earns the next 20 sessions.`, body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
       <div class="grid cols-2 section-gap">
         ${raw(panel({ title: 'Drawdown', note: 'Net value against its running peak.', body: '<div id="dd-legend"></div><div id="drawdown"></div>' }))}
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}

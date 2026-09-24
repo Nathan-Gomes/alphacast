@@ -22,7 +22,7 @@ from .features import (
     research_ready,
     with_cross_sectional_ranks,
 )
-from .portfolio import select_top, top_ranked_portfolio
+from .portfolio import hold_portfolio, select_top, top_ranked_portfolio
 from .ranking import (
     fit_ranker,
     importance_from_attribution,
@@ -534,7 +534,9 @@ def run_research(
     for model_name in config.models:
         previous_weights: pd.Series | None = None
         last_ranks: pd.Series | None = None
-        for fold, (scores, importance, fitted_through) in zip(folds, fold_outputs[model_name]):
+        for fold_index, (fold, (scores, importance, fitted_through)) in enumerate(
+            zip(folds, fold_outputs[model_name])
+        ):
             test = test_rows[fold.test_date]
             volatility_cutoff = market_volatility_by_date.loc[: fold.train_end].median()
             market_return = float(test.market_return_63.iloc[0])
@@ -542,14 +544,17 @@ def run_research(
             direction = "Expansion" if market_return >= 0 else "Contraction"
             volatility = "high vol" if market_volatility > volatility_cutoff else "low vol"
             diagnostics = rank_diagnostics(test, scores)
-            step, previous_weights = top_ranked_portfolio(
-                test,
-                scores,
-                previous_weights,
-                top_n=config.top_n,
-                transaction_cost_bps=config.transaction_cost_bps,
-                max_per_sector=config.max_per_sector,
-            )
+            if previous_weights is not None and fold_index % max(config.rebalance_every_folds, 1):
+                step = hold_portfolio(test, previous_weights)
+            else:
+                step, previous_weights = top_ranked_portfolio(
+                    test,
+                    scores,
+                    previous_weights,
+                    top_n=config.top_n,
+                    transaction_cost_bps=config.transaction_cost_bps,
+                    max_per_sector=config.max_per_sector,
+                )
             periods.append(
                 {
                     "model": model_name,

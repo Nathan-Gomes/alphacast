@@ -223,7 +223,7 @@
         {decay_svg}
         {decay_legend}
       </div>
-      <div class="readout"><b>The signal is slower than the horizon it was trained for.</b> Scored against longer windows, Random Forest's IC does not fade: {rf_ic10} at 10 sessions and {rf_ic60} at 60, against {rf_ic} at 20. A slower rebalance could keep most of the ranking skill with less turnover, a test for the next iteration rather than a conclusion, since longer windows overlap more and carry fewer independent observations.</div>
+      <div class="readout"><b>The signal is slower than the horizon it was trained for.</b> Scored against longer windows, Random Forest's IC does not fade: {rf_ic10} at 10 sessions and {rf_ic60} at 60, against {rf_ic} at 20. So I tested trading the book quarterly instead: average monthly turnover fell from {rf_turnover} to {q_turnover}, but net Sharpe dropped from {rf_sharpe} to <b>{q_sharpe}</b>. The ranking stays informative for longer, yet holdings chosen three months ago cost more than the trading they save.</div>
     </section>
 
     <section id="costs" style="padding:80px 0 0">
@@ -290,7 +290,7 @@
         <div>
           <p class="eyebrow">Next research iteration</p>
           <h2>Strengthen the data before expanding the claim</h2>
-          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, a slower rebalance where the decay analysis suggests the signal lasts, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
+          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, turnover-aware rebalancing that trades only when ranks move enough, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
         </div>
       </div>
     </section>
