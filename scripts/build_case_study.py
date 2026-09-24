@@ -322,7 +322,11 @@ def main(output: Path) -> None:
         decay_legend=legend(decay_series) if decay_series else "",
         q_sharpe=f"{quarterly['net_sharpe']:.2f}",
         b_sharpe=f"{buffered['net_sharpe']:.2f}",
-        c_sharpe=f"{capped['net_sharpe']:.2f}",
+        c_sharpe_phrase=(
+            f"left its net Sharpe unchanged at {capped['net_sharpe']:.2f}"
+            if f"{capped['net_sharpe']:.2f}" == f"{rf['net_sharpe']:.2f}"
+            else f"moved its net Sharpe from {rf['net_sharpe']:.2f} to {capped['net_sharpe']:.2f}"
+        ),
         c_vol=pct(capped["annualized_volatility"]),
         c_dd=pct(capped["max_drawdown"]),
         rf_vol=pct(rf["annualized_volatility"]),
