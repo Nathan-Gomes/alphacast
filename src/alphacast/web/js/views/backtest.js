@@ -40,7 +40,7 @@ export default {
         <div class="kpi"><div class="label">${raw(term('turnover', 'Avg monthly turnover'))}</div><div class="value">${pct(s.mean_turnover, 0)}</div><div class="sub">Cost drag ${pct(s.annualized_cost_drag, 2)} per year</div></div>
         <div class="kpi"><div class="label">Terminal growth, net</div><div class="value ${toneClass(s.net_terminal_growth - s.benchmark_terminal_growth)}">${pct(s.net_terminal_growth, 0)}</div><div class="sub">Gross ${pct(s.gross_terminal_growth, 0)} · benchmark ${pct(s.benchmark_terminal_growth, 0)}</div></div>
       </div>
-      ${raw(panel({ title: 'Growth of $1', note: `${periods.length} monthly out-of-sample holding periods from ${date(dates[0])} to ${date(periods.at(-1).date)}. The top ${index.ws.config.top_n} names are rebalanced ${cadence(index.ws.config.rebalance_every_folds)} and each period earns the next 20 sessions.`, body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
+      ${raw(panel({ title: 'Growth of $1', note: `${periods.length} monthly out-of-sample holding periods from ${date(dates[0])} to ${date(periods.at(-1).date)}. The top ${index.ws.config.top_n} names are rebalanced ${cadence(index.ws.config.rebalance_every_folds)} and each period earns the next 20 sessions. The dashed grey line scales the universe to the sleeve's full-period beta, a risk-matched comparison measured after the fact.`, body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
       <div class="grid cols-2 section-gap">
         ${raw(panel({ title: 'Drawdown', note: 'Net value against its running peak.', body: '<div id="dd-legend"></div><div id="drawdown"></div>' }))}
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}
@@ -57,6 +57,10 @@ export default {
       { label: 'Net of costs', color, values: net },
       { label: 'Gross', color, values: gross, dash: true, width: 1.5 },
       { label: 'Equal-weight universe', color: BENCH_COLOR, values: bench },
+      ...(Number.isFinite(s.beta) ? [{
+        label: `Universe at the sleeve's beta (${num(s.beta, 2)}×)`, color: BENCH_COLOR, dash: true, width: 1.5,
+        values: [1, ...cumulative(periods.map((row) => s.beta * row.benchmark_return))],
+      }] : []),
     ];
     document.getElementById('growth-legend').innerHTML = legend(growthSeries);
     lineChart(document.getElementById('growth'), {
