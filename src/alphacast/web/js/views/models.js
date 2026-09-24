@@ -49,6 +49,7 @@ export default {
         ${raw(panel({ title: 'Cumulative Rank IC', note: 'Sum of monthly Rank IC. A steady upward slope is a persistent signal; a flat stretch is a period without skill.', body: '<div id="ic-legend"></div><div id="ic"></div>' }))}
         ${raw(panel({ title: 'Net growth by model', note: 'Top-ranked sleeve after costs, against the equal-weight universe.', body: '<div id="growth-legend"></div><div id="growth"></div>' }))}
       </div>
+      <div class="section-gap">${raw(panel({ title: 'Model specifications', note: 'Declared before any result and identical in every fold. Read from the estimators the research builds.', body: '<div id="specs"></div>', flush: true }))}</div>
       <div class="section-gap">${raw(panel({ title: 'How much the models agree today', note: 'Spearman correlation between each pair of models\' rankings at the latest close. Low agreement means the models are finding different stocks, not the same bet in different clothes.', body: '<div id="agreement"></div>' }))}</div>
       <div class="section-gap">${raw(panel({ title: 'What each model relies on', note: 'Average share of attribution per feature across folds (percent). Reliance describes the model, not causality.', body: '<div id="heat"></div>' }))}</div>`;
 
@@ -93,5 +94,19 @@ export default {
     });
     document.getElementById('heat').innerHTML = heatGrid(index);
     document.getElementById('agreement').innerHTML = agreementGrid(index);
+    const specs = (ctx.catalog?.model_specs || []).filter((spec) => index.models.includes(spec.id));
+    dataTable(document.getElementById('specs'), {
+      rows: specs, empty: 'Specifications load with the catalog.',
+      columns: [
+        { key: 'id', label: 'Model', sortable: false, render: (row) => html`<span class="dot" style="background:${raw(modelColor(row.id))}"></span>${index.labels[row.id]}` },
+        { key: 'description', label: 'What it is', sortable: false, render: (row) => html`<span class="spec-text">${row.description}</span>` },
+        { key: 'params', label: 'Hyperparameters', sortable: false, render: (row) => {
+          const entries = Object.entries(row.params).filter(([key]) => key !== 'estimator');
+          return entries.length
+            ? `<span class="mono spec-text">${entries.map(([key, value]) => `${escapeHtml(key)}=${escapeHtml(value ?? 'None')}`).join(' · ')}</span>`
+            : '<span class="muted">None</span>';
+        } },
+      ],
+    });
   },
 };

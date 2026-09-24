@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 from . import __version__
 from .config import MODEL_LABELS, SUPPORTED_MODELS, ResearchConfig
 from .features import FEATURE_LABELS
+from .ranking import model_specs
 from .runs import DEFAULT_RUN_ID, RunRegistry, RunRequest
 from .universe import UNIVERSES
 
@@ -96,6 +97,7 @@ def catalog() -> dict[str, object]:
             for model in SUPPORTED_MODELS
         ],
         "overhead_seconds": round(3 * SPEED_FACTOR),
+        "model_specs": model_specs(),
         "features": [{"id": key, "label": value} for key, value in FEATURE_LABELS.items()],
         "sources": [
             {"id": "snapshot", "label": "Frozen snapshot", "detail": "Shipped Yahoo history. Instant and reproducible."},

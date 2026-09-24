@@ -31,6 +31,9 @@ def test_catalog_lists_models_with_estimates_and_defaults():
     assert all(model["seconds"] > 0 for key, model in models.items() if key != "ensemble")
     assert models["ensemble"]["seconds"] == 0  # derived from the others, nothing to fit
     assert {universe["id"] for universe in catalog["universes"]} == {"us_large_cap", "starter_30"}
+    specs = {spec["id"]: spec for spec in catalog["model_specs"]}
+    assert specs["random_forest"]["params"]["n_estimators"] == 80
+    assert specs["momentum"]["params"] == {}
 
 
 def test_default_workspace_serves_live_rankings_and_security_detail():

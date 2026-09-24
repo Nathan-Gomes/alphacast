@@ -51,6 +51,36 @@ def build_model(name: str, random_seed: int = 17):
     return factories[name]()
 
 
+SPEC_KEYS = {
+    "ridge": ["alpha"],
+    "elastic_net": ["alpha", "l1_ratio"],
+    "random_forest": ["n_estimators", "max_depth", "min_samples_leaf", "max_features", "max_samples"],
+    "gradient_boosting": ["max_iter", "learning_rate", "max_leaf_nodes", "min_samples_leaf", "l2_regularization"],
+}
+DESCRIPTIONS = {
+    "momentum": "Ranks by 12-1 momentum. Nothing is fitted; the baseline every model must beat.",
+    "ridge": "Standardised linear regression with an L2 penalty.",
+    "elastic_net": "Standardised linear regression with combined L1 and L2 penalties.",
+    "random_forest": "Bagged regression trees on bootstrap samples of rows and features.",
+    "gradient_boosting": "Histogram gradient-boosted trees, fitted sequentially on residuals.",
+    "ensemble": "Equal-weight average of the other machine-learning models' within-date ranks.",
+}
+
+
+def model_specs() -> list[dict[str, object]]:
+    """Declared hyperparameters, read from the estimators the research actually builds."""
+    specs = []
+    for name, description in DESCRIPTIONS.items():
+        params: dict[str, object] = {}
+        if name in SPEC_KEYS:
+            estimator = build_model(name)
+            estimator = estimator[-1] if hasattr(estimator, "steps") else estimator
+            params = {key: estimator.get_params()[key] for key in SPEC_KEYS[name]}
+            params["estimator"] = type(estimator).__name__
+        specs.append({"id": name, "description": description, "params": params})
+    return specs
+
+
 def training_target(train: pd.DataFrame) -> pd.Series:
     """Winsorize each date's labels at its 2.5th/97.5th percentile before fitting.
 
