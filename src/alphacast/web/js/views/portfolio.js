@@ -1,5 +1,12 @@
+import { hbars } from '../charts.js';
 import { liveRows } from '../data.js';
-import { html, num, pct, raw, sectorShort, toneClass } from '../format.js';
+import { html, mean, num, pct, raw, sectorShort, toneClass } from '../format.js';
+
+const median = (values) => {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
 import { dataTable } from '../table.js';
 import { panel, pctBar, rankChange, tickerLink } from './parts.js';
 
@@ -25,7 +32,6 @@ export default {
       return { sector, universe, held, active: held - universe };
     }).sort((a, b) => b.held - a.held || b.universe - a.universe);
     const maxWeight = Math.max(...sectors.map((row) => Math.max(row.held, row.universe)), 0.01);
-    const avg = (key) => holdings.reduce((sum, row) => sum + (row[key] ?? 0), 0) / holdings.length;
     const summary = index.summaries[model];
 
     ctx.el.innerHTML = html`
@@ -33,7 +39,7 @@ export default {
         <div class="kpi"><div class="label">Holdings</div><div class="value">${holdings.length}</div><div class="sub">${new Set(holdings.map((row) => row.sector)).size} sectors represented</div></div>
         <div class="kpi"><div class="label">Changes at this signal</div><div class="value">+${entering.length} / −${exiting.length}</div><div class="sub">Entering / exiting vs last rebalance</div></div>
         <div class="kpi"><div class="label">Implied turnover</div><div class="value">${pct(turnover, 0)}</div><div class="sub">Cost ≈ ${pct(cost, 2)} at ${index.ws.config.transaction_cost_bps} bps · history avg ${pct(summary.mean_turnover, 0)}</div></div>
-        <div class="kpi"><div class="label">Average profile</div><div class="value">${num(avg('momentum'), 0)} <span class="muted" style="font-size:13px">mom.</span></div><div class="sub">Rel. strength ${num(avg('relative_strength'), 0)} · low risk ${num(avg('low_risk'), 0)}</div></div>
+        <div class="kpi"><div class="label">Largest sector</div><div class="value">${pct(sectors[0].held, 0)}</div><div class="sub">${sectorShort(sectors[0].sector)} · universe ${pct(sectors[0].universe, 0)}</div></div>
       </div>
       <div class="grid cols-main">
         ${raw(panel({ title: 'Target holdings', note: 'Weights if the book were rebalanced at the latest close.', body: '<div id="holdings"></div>', flush: true }))}
@@ -50,10 +56,26 @@ export default {
                 <span class="val ${toneClass(row.active)}">${pct(row.active, 0, { sign: true })}</span>
               </div>`).join('')}</div>
             <p class="note">Right column: active weight vs universe. The sleeve has no sector constraint, so concentration is a result of the ranking and worth watching.</p>` }))}
+          ${raw(panel({ title: 'Factor tilts', note: 'Average percentile of the holdings minus the universe average of 50. Positive means the book leans that way.', body: '<div id="tilts"></div><div class="table-wrap" id="tilt-table" style="margin-top:12px"></div>' }))}
           ${raw(panel({ title: 'Entering', note: 'New to the book at this signal.', body: '<div id="entering"></div>', flush: true }))}
           ${raw(panel({ title: 'Exiting', note: 'Held at the last rebalance, now outside the top ranks.', body: '<div id="exiting"></div>', flush: true }))}
         </div>
       </div>`;
+
+    const factors = [['momentum', 'Momentum'], ['relative_strength', 'Relative strength'], ['low_risk', 'Low risk'], ['liquidity', 'Liquidity']];
+    document.getElementById('tilts').innerHTML = hbars(
+      factors.map(([key, label]) => ({ label, value: mean(holdings.map((row) => row[key])) - 50 })),
+      { signed: true, format: (value) => num(value, 0, { sign: true }), color: 'var(--series-1)', negativeColor: 'var(--series-2)' },
+    );
+    const raws = [['momentum_12_1', '12-1 momentum'], ['return_63', '3M return'], ['volatility_60', '60D volatility'], ['drawdown_252', '12M drawdown']];
+    dataTable(document.getElementById('tilt-table'), {
+      rows: raws.map(([key, label]) => ({ label, held: median(holdings.map((row) => row[key])), universe: median(rows.map((row) => row[key])) })),
+      columns: [
+        { key: 'label', label: 'Median', sortable: false },
+        { key: 'held', label: 'Holdings', num: true, sortable: false, render: (row) => pct(row.held, 1) },
+        { key: 'universe', label: 'Universe', num: true, sortable: false, render: (row) => pct(row.universe, 1) },
+      ],
+    });
 
     const open = (row) => ctx.navigate(`#/security/${row.ticker}`);
     dataTable(document.getElementById('holdings'), {
