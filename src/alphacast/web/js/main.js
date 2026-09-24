@@ -137,7 +137,12 @@ async function render() {
   if (view.needsWorkspace !== false && !state.index) {
     container.innerHTML = state.record?.status === 'failed'
       ? html`<div class="loading"><p>This workspace failed: ${state.record.error}</p><a class="button" href="#/runs">Open runs</a></div>`
-      : '<div class="loading"><div class="spinner"></div><p>Loading workspace…</p></div>';
+      : `<div class="skeleton-view" aria-busy="true" aria-label="Loading workspace">
+          <div class="skeleton-kpis">${'<div class="skeleton"></div>'.repeat(6)}</div>
+          <div class="skeleton skeleton-bar"></div>
+          <div class="skeleton-grid"><div class="skeleton skeleton-panel"></div><div class="skeleton skeleton-panel"></div></div>
+          <p class="sr-only">Loading workspace…</p>
+        </div>`;
     return;
   }
   try {

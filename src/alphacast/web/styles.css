@@ -452,3 +452,10 @@ details.advanced[open] { padding-bottom: 12px; }
 .term { border-bottom: 1px dotted var(--muted); cursor: help; }
 .term:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
 .tooltip .tt-text { color: var(--ink-2); line-height: 1.5; white-space: normal; }
+.skeleton-view { display: grid; gap: 16px; }
+.skeleton-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.skeleton-kpis .skeleton { height: 92px; }
+.skeleton-bar { height: 110px; }
+.skeleton-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+.skeleton-panel { height: 420px; }
+@media (max-width: 900px) { .skeleton-grid { grid-template-columns: minmax(0, 1fr); } }
