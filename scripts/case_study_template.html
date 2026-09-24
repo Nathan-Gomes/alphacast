@@ -123,7 +123,7 @@
         <div class="takeaway">
           <span class="takeaway-n">1</span>
           <h3>The signal is small, and only suggestive</h3>
-          <p>Random Forest ranked stocks with a mean Rank IC of <b>{rf_ic}</b>, positive in <b>{rf_pos}</b> of {folds} months, the only t-statistic above 2 (p = {rf_p}). Adjusted for testing six models, p rises to <b>{rf_holm}</b>. That is typical of real equity signals: useful as a tilt, nowhere near a forecast.</p>
+          <p>Random Forest ranked stocks with a mean Rank IC of <b>{rf_ic}</b>, positive in <b>{rf_pos}</b> of {folds} months, the only t-statistic above 2 (p = {rf_p}; bootstrap 95% interval {rf_ci}). Adjusted for testing six models, p rises to <b>{rf_holm}</b>. That is typical of real equity signals: useful as a tilt, nowhere near a forecast.</p>
         </div>
         <div class="takeaway">
           <span class="takeaway-n">2</span>
@@ -246,6 +246,7 @@
         {cost_legend}
       </div>
       <div class="readout"><b>The risk-adjusted edge is thin.</b> Random Forest's net Sharpe falls to the universe's at about <b>{rf_even} bps</b> one way; momentum, which trades less, holds on to about <b>{mom_even} bps</b>. Below roughly <b>{cross} bps</b> Random Forest has the better net Sharpe; above it, the simpler baseline wins. Large-cap trading costs are usually well below either, but the margin is not wide. A holding buffer, which keeps a stock until it drops out of the top 23 rather than the top 15, cut turnover from {rf_turnover} to <b>{b_turnover}</b> a month at a similar net Sharpe ({b_sharpe}); the saving in trading is real, the change in Sharpe is within noise.</div>
+      <div class="readout"><b>It does not hinge on holding exactly 15 names.</b> Rebuilding the same scores as books of {book_small} to {book_large} names keeps Random Forest's net Sharpe between {book_low} and {book_high}. Its active return rises from {book_active_large} a year at {book_large} names to <b>{book_active_small}</b> at {book_small}: the higher a stock ranks, the more it tends to beat its sector, which is what an informative ranking should do.</div>
       <div class="chart-card">
         <div class="tablewrap" style="margin-top:0">
           <table class="results">

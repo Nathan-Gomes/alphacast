@@ -173,6 +173,8 @@ def main(output: Path) -> None:
                           f"each has a weaker last six months, but no drop exceeds {abs(worst_z):.1f} standard errors, so none is called degraded")
     else:
         health_summary = "The monitoring view currently shows " + ", ".join(f"<b>{n} {status}</b>" for status, n in counts.items())
+    books = sorted((row for row in ws["book_sizes"] if row["model"] == "random_forest"), key=lambda row: row["top_n"])
+    book_sharpes = [row["net_sharpe"] for row in books]
     rf_health = monitoring["random_forest"]
     rf_status = {"watch": "on watch", "degraded": "degraded", "healthy": "healthy"}[rf_health["status"]]
     rf_z = f"{abs(rf_health['change_z']):.1f}"
@@ -316,6 +318,13 @@ def main(output: Path) -> None:
         rf_t=f"{rf['ic_t_stat']:.1f}",
         rf_p=f"{rf['p_value']:.3f}",
         rf_holm=f"{rf['p_value_holm']:.2f}",
+        rf_ci=f"{rf['ic_ci_low']:.3f} to {rf['ic_ci_high']:.3f}",
+        book_low=f"{min(book_sharpes):.2f}",
+        book_high=f"{max(book_sharpes):.2f}",
+        book_small=str(books[0]["top_n"]),
+        book_large=str(books[-1]["top_n"]),
+        book_active_small=f"{books[0]['annualized_active_return'] * 100:.1f}%",
+        book_active_large=f"{books[-1]['annualized_active_return'] * 100:.1f}%",
         rf_pos=pct(rf["positive_ic_rate"], 0),
         mom_ic=f"{mom['mean_rank_ic']:.3f}",
         mom_t=f"{mom['ic_t_stat']:.1f}",
