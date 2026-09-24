@@ -240,7 +240,7 @@
         {cost_svg}
         {cost_legend}
       </div>
-      <div class="readout"><b>The risk-adjusted edge is thin.</b> Random Forest's net Sharpe falls to the universe's at about <b>{rf_even} bps</b> one way; momentum, which trades less, holds on to about <b>{mom_even} bps</b>. Below roughly <b>{cross} bps</b> Random Forest has the better net Sharpe; above it, the simpler baseline wins. Large-cap trading costs are usually well below either, but the margin is not wide.</div>
+      <div class="readout"><b>The risk-adjusted edge is thin.</b> Random Forest's net Sharpe falls to the universe's at about <b>{rf_even} bps</b> one way; momentum, which trades less, holds on to about <b>{mom_even} bps</b>. Below roughly <b>{cross} bps</b> Random Forest has the better net Sharpe; above it, the simpler baseline wins. Large-cap trading costs are usually well below either, but the margin is not wide. A holding buffer, which keeps a stock until it drops out of the top 23 rather than the top 15, cut turnover from {rf_turnover} to <b>{b_turnover}</b> a month at a similar net Sharpe ({b_sharpe}); the saving in trading is real, the change in Sharpe is within noise.</div>
       <div class="chart-card">
         <div class="tablewrap" style="margin-top:0">
           <table class="results">
@@ -290,7 +290,7 @@
         <div>
           <p class="eyebrow">Next research iteration</p>
           <h2>Strengthen the data before expanding the claim</h2>
-          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, turnover-aware rebalancing that trades only when ranks move enough, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
+          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
         </div>
       </div>
     </section>

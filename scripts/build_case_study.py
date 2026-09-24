@@ -116,15 +116,15 @@ def legend(series: list[dict]) -> str:
     return f'<div class="legend">{"".join(items)}</div>'
 
 
-def _quarterly_random_forest(end: str) -> dict:
-    """Random Forest with the book traded every third month, on the same snapshot."""
+def _random_forest_variant(end: str, **options) -> dict:
+    """Random Forest on the same snapshot with one portfolio option changed."""
     from alphacast.config import ResearchConfig
     from alphacast.data import snapshot_prices
     from alphacast.research import run_research
 
     run = run_research(
         snapshot_prices(), source="snapshot",
-        config=ResearchConfig(end=end, models=("random_forest",), rebalance_every_folds=3),
+        config=ResearchConfig(end=end, models=("random_forest",), **options),
     )
     return run.summaries.iloc[0].to_dict()
 
@@ -263,7 +263,8 @@ def main(output: Path) -> None:
         x_ticks=[(i, f"{h} sessions") for i, h in enumerate(horizons)],
     ) if horizons else ""
     rf_decay = {r["horizon"]: r["mean_rank_ic"] for r in decay if r["model"] == "random_forest"}
-    quarterly = _quarterly_random_forest(ws["config"]["end"])
+    quarterly = _random_forest_variant(ws["config"]["end"], rebalance_every_folds=3)
+    buffered = _random_forest_variant(ws["config"]["end"], hold_buffer=23)
     tests = _test_count()
 
     template = (ROOT / "scripts" / "case_study_template.html").read_text()
@@ -317,6 +318,8 @@ def main(output: Path) -> None:
         decay_svg=decay_svg,
         decay_legend=legend(decay_series) if decay_series else "",
         q_sharpe=f"{quarterly['net_sharpe']:.2f}",
+        b_sharpe=f"{buffered['net_sharpe']:.2f}",
+        b_turnover=pct(buffered["mean_turnover"], 0),
         q_turnover=pct(quarterly["mean_turnover"], 0),
         rf_ic10=f"{rf_decay.get(10, float('nan')):.3f}",
         rf_ic60=f"{rf_decay.get(60, float('nan')):.3f}",
