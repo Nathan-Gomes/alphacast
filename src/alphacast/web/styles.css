@@ -374,3 +374,4 @@ tr.selected td { background: var(--accent-soft); }
   .badge::before, .dot, .legend i { forced-color-adjust: none; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+input[type="range"] { accent-color: var(--accent); width: 160px; }

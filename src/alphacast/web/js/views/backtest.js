@@ -1,8 +1,18 @@
 import { columnChart, legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor } from '../data.js';
-import { cumulative, date, downloadFile, drawdowns, html, num, pct, raw, rolling, toCsv, toneClass } from '../format.js';
+import { cumulative, date, downloadFile, drawdowns, html, mean, num, pct, raw, rolling, std, toCsv, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
 import { panel } from './parts.js';
+
+const sharpe = (returns) => { const sd = std(returns); return sd > 0 ? (Math.sqrt(12) * mean(returns)) / sd : 0; };
+const annualized = (returns) => returns.reduce((wealth, value) => wealth * (1 + value), 1) ** (12 / returns.length) - 1;
+
+/** Net returns at any one-way cost, rebuilt from gross returns and turnover. */
+function atCost(periods, bps) {
+  return periods.map((row) => row.gross_return - (row.turnover * bps) / 10_000);
+}
+
+let chosenCost = null;
 
 export default {
   title: 'Backtest',
@@ -33,6 +43,7 @@ export default {
         ${raw(panel({ title: 'Drawdown', note: 'Net value against its running peak.', body: '<div id="dd-legend"></div><div id="drawdown"></div>' }))}
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}
       </div>
+      <div class="section-gap">${raw(panel({ title: 'Cost sensitivity', note: 'Net results rebuilt from gross returns and turnover at any one-way trading cost. The benchmark is untraded.', actions: '<label class="field compact"><span>Cost</span><input id="cost-slider" type="range" min="0" max="100" step="1" aria-label="One-way cost in basis points"><output id="cost-value" class="mono" style="min-width:56px;text-align:right"></output></label>', body: '<div class="grid cols-main"><div><div id="cost-legend"></div><div id="cost-chart"></div></div><div id="cost-readout"></div></div>' }))}</div>
       <div class="grid cols-2 section-gap">
         ${raw(panel({ title: 'Turnover by rebalance', note: 'One-way share of the book traded. The first period is the starting allocation.', body: '<div id="turnover"></div>' }))}
         ${raw(panel({ title: 'Period returns', note: 'Most recent first.', actions: '<button class="button small" id="csv" type="button">Export CSV</button>', body: '<div class="scroll-table" style="max-height:300px" id="periods"></div>', flush: true }))}
@@ -69,6 +80,49 @@ export default {
       yFormat: (value) => pct(value, 0), positive: color, label: 'Turnover by rebalance',
       tooltipRows: (i) => [{ label: 'Turnover', value: pct(periods[i].turnover, 0) }, { label: 'Cost', value: pct(periods[i].transaction_cost, 3) }],
     });
+    const benchReturns = periods.map((row) => row.benchmark_return);
+    const benchSharpe = sharpe(benchReturns);
+    const meanTurnover = mean(periods.map((row) => row.turnover));
+    const grossEdge = mean(periods.map((row) => row.gross_return - row.benchmark_return));
+    const breakEven = meanTurnover > 0 ? (grossEdge / meanTurnover) * 10_000 : Infinity;
+    // Cost at which the risk-adjusted edge is gone, searched in 1 bp steps.
+    let sharpeEven = null;
+    for (let bps = 0; bps <= 1000; bps += 1) {
+      if (sharpe(atCost(periods, bps)) <= benchSharpe) { sharpeEven = bps; break; }
+    }
+    const grid = Array.from({ length: 21 }, (_, i) => i * 5);
+    const costSeries = [
+      { label: 'Net Sharpe', color, values: grid.map((bps) => sharpe(atCost(periods, bps))) },
+      { label: 'Universe Sharpe', color: BENCH_COLOR, values: grid.map(() => benchSharpe), dash: true },
+    ];
+    document.getElementById('cost-legend').innerHTML = legend(costSeries);
+    lineChart(document.getElementById('cost-chart'), {
+      dates: grid.map((bps) => `${bps} bps`), xFormat: (value) => value, series: costSeries, height: 220,
+      yFormat: (value) => value.toFixed(2), label: 'Net Sharpe ratio across one-way trading costs from 0 to 100 basis points',
+    });
+    const slider = document.getElementById('cost-slider');
+    const output = document.getElementById('cost-value');
+    const readout = document.getElementById('cost-readout');
+    const update = () => {
+      const bps = Number(slider.value);
+      chosenCost = bps;
+      const net = atCost(periods, bps);
+      const active = net.map((value, i) => value - benchReturns[i]);
+      output.textContent = `${bps} bps`;
+      readout.innerHTML = html`
+        <div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">
+          <div class="kpi"><div class="label">Net Sharpe</div><div class="value ${toneClass(sharpe(net) - benchSharpe)}">${num(sharpe(net), 2)}</div><div class="sub">Universe ${num(benchSharpe, 2)}</div></div>
+          <div class="kpi"><div class="label">Annualized, net</div><div class="value">${pct(annualized(net))}</div><div class="sub">Universe ${pct(annualized(benchReturns))}</div></div>
+          <div class="kpi"><div class="label">Cost drag</div><div class="value">${pct((meanTurnover * bps * 12) / 10_000, 2)}</div><div class="sub">per year at ${pct(meanTurnover, 0)} turnover</div></div>
+          <div class="kpi"><div class="label">Beat the universe</div><div class="value">${pct(active.filter((value) => value > 0).length / active.length, 0)}</div><div class="sub">of months</div></div>
+        </div>
+        <p class="note">${raw(sharpeEven === 0 ? 'Even before costs, the sleeve does not beat the universe on a risk-adjusted basis.'
+          : `Net Sharpe falls to the universe's at about <b>${sharpeEven ?? '1,000+'} bps</b> one way${Number.isFinite(breakEven) && breakEven > 0 ? `; the raw return edge lasts to about <b>${Math.round(breakEven)} bps</b>, because the sleeve also carries more volatility` : ''}. The run was charged ${index.ws.config.transaction_cost_bps} bps.`)}</p>`;
+    };
+    slider.value = String(chosenCost ?? index.ws.config.transaction_cost_bps);
+    slider.addEventListener('input', update);
+    update();
+
     const recent = [...periods].reverse().map((row) => ({ ...row, active: row.net_return - row.benchmark_return }));
     const columns = [
       { key: 'date', label: 'Rebalance', render: (row) => date(row.date) },

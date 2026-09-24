@@ -78,12 +78,12 @@ function yAxis(ticks, scaleY, left, right, format) {
     <text x="${left - 8}" y="${scaleY(tick) + 3.5}" text-anchor="end">${escapeHtml(format(tick))}</text>`).join('');
 }
 
-function xLabels(dates, scaleX, bottom, count) {
+function xLabels(dates, scaleX, bottom, count, format = (value) => date(value, 'short')) {
   if (!dates.length) return '';
   const step = Math.max(1, Math.ceil(dates.length / count));
   const indices = [];
   for (let index = 0; index < dates.length; index += step) indices.push(index);
-  return indices.map((index) => `<text x="${scaleX(index)}" y="${bottom + 18}" text-anchor="middle">${escapeHtml(date(dates[index], 'short'))}</text>`).join('');
+  return indices.map((index) => `<text x="${scaleX(index)}" y="${bottom + 18}" text-anchor="middle">${escapeHtml(format(dates[index]))}</text>`).join('');
 }
 
 function linePath(values, scaleX, scaleY) {
@@ -108,7 +108,7 @@ export function legend(items) {
  */
 export function lineChart(container, {
   dates, series, height = 260, yFormat = (value) => value.toFixed(2), baseline = null,
-  band = null, label = 'Line chart', tooltipFormat = yFormat, markers = null,
+  band = null, label = 'Line chart', tooltipFormat = yFormat, markers = null, xFormat = null,
 }) {
   const { svg, width } = frame(container, height, label);
   const margin = { top: 12, right: 14, bottom: 28, left: 54 };
@@ -145,7 +145,7 @@ export function lineChart(container, {
   if (markers) {
     body += markers.map((marker) => `<circle cx="${scaleX(marker.index)}" cy="${scaleY(marker.value)}" r="4" fill="${marker.color}" stroke="var(--surface)" stroke-width="2"/>`).join('');
   }
-  body += xLabels(dates, scaleX, bottom, Math.max(3, Math.floor(width / 110)));
+  body += xLabels(dates, scaleX, bottom, Math.max(3, Math.floor(width / 110)), xFormat || undefined);
   body += `<g class="hover" visibility="hidden"><line class="crosshair" y1="${margin.top}" y2="${bottom}"/>${series.map((item) => `<circle r="4" fill="${item.color}" stroke="var(--surface)" stroke-width="2"/>`).join('')}</g>`;
   body += `<rect class="hit" x="${margin.left}" y="0" width="${right - margin.left}" height="${bottom}"/>`;
   svg.innerHTML = body;
@@ -167,7 +167,7 @@ export function lineChart(container, {
       if (isNum(value)) { dot.setAttribute('cx', cx); dot.setAttribute('cy', scaleY(value)); }
     });
     hover.setAttribute('visibility', 'visible');
-    showTooltip(event, tooltipHtml(date(dates[index]), series.map((item) => ({
+    showTooltip(event, tooltipHtml(xFormat ? xFormat(dates[index]) : date(dates[index]), series.map((item) => ({
       label: item.label, color: item.color, value: isNum(item.values[index]) ? tooltipFormat(item.values[index]) : '—',
     }))));
   };
