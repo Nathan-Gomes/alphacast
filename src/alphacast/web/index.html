@@ -1,77 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="AlphaCast systematic equity research dashboard">
-    <title>AlphaCast | Systematic equity research</title>
+    <meta name="description" content="AlphaCast: cross-sectional equity ranking workstation with walk-forward validation, live signals, portfolio construction and model monitoring.">
+    <meta name="color-scheme" content="dark light">
+    <title>AlphaCast</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/styles.css">
+    <script>
+      try {
+        const saved = localStorage.getItem('alphacast.theme');
+        if (saved) document.documentElement.dataset.theme = saved;
+      } catch (error) { /* storage unavailable: keep the default theme */ }
+    </script>
   </head>
   <body>
-    <main class="shell">
-      <header class="topbar">
-        <a class="wordmark" href="/">ALPHACAST</a>
-        <span class="status"><i></i> Research environment</span>
-      </header>
-
-      <section class="hero">
-        <div>
-          <p class="eyebrow">SYSTEMATIC EQUITY RESEARCH</p>
-          <h1>Rank future relative winners.<br>Prove the timing first.</h1>
-          <p class="lead">A walk-forward research environment for comparing price-and-volume signals under the same embargoed validation, portfolio, and cost assumptions.</p>
+    <a class="skip-link" href="#view">Skip to content</a>
+    <div class="app">
+      <aside class="sidebar" id="sidebar" aria-label="Primary">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M7 23 13 15l4 4 8-10"/></svg>
+          <div><strong>AlphaCast</strong><span>Equity ranking workstation</span></div>
         </div>
-        <aside class="method-card">
-          <strong>What this does</strong>
-          <p>Scores are tested against the next 20 trading sessions of sector-relative performance. They are not price targets or trading advice.</p>
-          <a href="#method">Read the research controls</a>
-        </aside>
-      </section>
+        <nav id="nav">
+          <p class="nav-group">Signal</p>
+          <a href="#/overview" data-view="overview"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 4v4h6V4z"/></svg>Overview</a>
+          <a href="#/screener" data-view="screener"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Screener</a>
+          <a href="#/security" data-view="security"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>Security</a>
+          <a href="#/portfolio" data-view="portfolio"><svg viewBox="0 0 24 24"><path d="M12 3v9l7.8 4.5A9 9 0 1 1 12 3z"/><path d="M15 3.5A9 9 0 0 1 20.5 12H15z"/></svg>Portfolio</a>
+          <p class="nav-group">Research</p>
+          <a href="#/backtest" data-view="backtest"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Backtest</a>
+          <a href="#/models" data-view="models"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Models</a>
+          <a href="#/diagnostics" data-view="diagnostics"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Diagnostics</a>
+          <a href="#/monitoring" data-view="monitoring"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Monitoring</a>
+          <p class="nav-group">Workspace</p>
+          <a href="#/runs" data-view="runs"><svg viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>Runs</a>
+        </nav>
+        <div class="sidebar-foot">
+          <a href="https://www.nathan-gomes.com/Project-AlphaCast.dc.html" target="_blank" rel="noreferrer">About the project ↗</a>
+          <a href="https://github.com/Nathan-Gomes/alphacast/blob/main/docs/METHODOLOGY.md" target="_blank" rel="noreferrer">Methodology ↗</a>
+          <a href="/api/docs" target="_blank" rel="noreferrer">API reference ↗</a>
+        </div>
+      </aside>
 
-      <section class="run-panel" aria-labelledby="run-heading">
-        <div class="panel-heading"><p class="eyebrow">RESEARCH RUN</p><h2 id="run-heading">Declare the data and assumptions.</h2></div>
-        <form id="research-form">
-          <div class="control source-control">
-            <span>Data source</span>
-            <div class="segmented" role="radiogroup" aria-label="Data source">
-              <label><input name="source" value="synthetic" type="radio" checked> Synthetic demonstration</label>
-              <label><input name="source" value="yahoo" type="radio"> Yahoo Finance history</label>
-            </div>
+      <div class="main">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="menu-button" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <div class="title-block">
+            <h1 id="view-title">Overview</h1>
+            <p id="view-subtitle"></p>
           </div>
-          <label class="control tickers-control">Tickers <textarea id="tickers" rows="3" spellcheck="false"></textarea><small>Comma-separated. Yahoo runs need at least 10 tickers. The starter mapping supplies sectors for the default universe.</small></label>
-          <label class="control">Start date <input id="start" type="date" value="2017-01-01"></label>
-          <label class="control">End date <input id="end" type="date"></label>
-          <label class="control">Top-ranked sleeve <input id="top-n" type="number" min="1" max="30" value="10"></label>
-          <label class="control">One-way cost (bps) <input id="cost-bps" type="number" min="0" max="250" step="1" value="10"></label>
-          <fieldset class="control models"><legend>Models</legend><label><input type="checkbox" value="momentum" checked> Momentum</label><label><input type="checkbox" value="ridge" checked> Ridge</label><label><input type="checkbox" value="elastic_net" checked> Elastic Net</label><label><input type="checkbox" value="random_forest"> Random Forest</label></fieldset>
-          <button id="run-button" type="submit">Run declared study <span aria-hidden="true">→</span></button>
-        </form>
-        <p id="run-status" class="run-status" aria-live="polite">Load the deterministic demonstration to inspect the entire research workflow.</p>
-      </section>
-
-      <section id="results" class="results" hidden>
-        <div class="section-heading"><p class="eyebrow">OUT-OF-SAMPLE RESULTS</p><h2>Compare evidence, not a single headline.</h2><span id="run-label"></span></div>
-        <div id="quality" class="quality-grid"></div>
-        <div class="table-wrap"><table><thead><tr><th>Model</th><th>Mean rank IC</th><th>IC ratio</th><th>Positive IC</th><th>Q1 − Q5</th><th>Net Sharpe</th><th>Avg. turnover</th><th>Net growth</th></tr></thead><tbody id="summary-body"></tbody></table></div>
-
-        <div class="two-column compact-cards">
-          <section class="chart-card"><div class="card-heading"><div><p class="eyebrow">MODEL MONITORING</p><h3>Recent ranking health</h3></div><p>Latest six folds compared with the full historical run.</p></div><div class="table-wrap"><table><thead><tr><th>Model</th><th>Recent IC</th><th>Change</th><th>Positive recent IC</th></tr></thead><tbody id="monitoring-body"></tbody></table></div></section>
-          <section class="chart-card"><div class="card-heading"><div><p class="eyebrow">REGIME DIAGNOSTICS</p><h3>Where the ranking signal changed</h3></div><p>Each regime is determined from information available before the test date.</p></div><div class="table-wrap"><table><thead><tr><th>Model</th><th>Regime</th><th>Mean IC</th><th>Q1 - Q5</th></tr></thead><tbody id="regime-body"></tbody></table></div></section>
-        </div>
-
-        <div class="two-column">
-          <section class="chart-card"><div class="card-heading"><div><p class="eyebrow">PORTFOLIO PATH</p><h3>Historical net value versus equal-weight universe</h3></div><label>Model <select id="model-select"></select></label></div><svg id="equity-chart" viewBox="0 0 900 300" role="img" aria-label="Net portfolio value and equal-weight universe value"></svg><div class="chart-key"><span class="strategy-key"></span> Top-ranked net sleeve <span class="benchmark-key"></span> Equal-weight universe</div></section>
-          <section class="chart-card"><div class="card-heading"><div><p class="eyebrow">MODEL DRIVERS</p><h3>Average in-sample importance</h3></div></div><ol id="importance" class="importance-list"></ol><p class="caption">Importance describes model reliance, not causality. The momentum baseline has one declared input by design.</p></section>
-        </div>
-
-        <section class="ranking-card"><div class="card-heading"><div><p class="eyebrow">LAST EVALUATED HISTORICAL REBALANCE</p><h3>Cross-sectional ranking</h3></div><p>These are historical evaluation scores with forward outcomes already known. They are not current recommendations.</p></div><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Ticker</th><th>Sector</th><th>Model score</th><th>12−1 momentum</th><th>20-day volatility</th></tr></thead><tbody id="ranking-body"></tbody></table></div></section>
-      </section>
-
-      <section id="method" class="method">
-        <div><p class="eyebrow">RESEARCH CONTROLS</p><h2>How AlphaCast avoids the easy mistakes.</h2></div>
-        <div class="method-grid"><article><strong>01 / Features</strong><p>Every input is trailing-only and exists at the decision close.</p></article><article><strong>02 / Target</strong><p>Forward sector-relative return starts after the scoring session and runs for 20 sessions.</p></article><article><strong>03 / Embargo</strong><p>The latest 20 labelled sessions are removed from training so labels cannot overlap the test horizon.</p></article><article><strong>04 / Costs</strong><p>Top-ranked portfolio results disclose turnover and subtract declared transaction costs.</p></article></div>
-        <div class="limits"><strong>Limits that remain:</strong> a manually declared universe can have selection bias; Yahoo is not institutional point-in-time data; there are no fundamental features or execution-quality estimates yet. A positive backtest does not prove future performance.</div>
-      </section>
-    </main>
-    <script src="/assets/app.js" defer></script>
+          <div class="toolbar">
+            <label class="field compact"><span>Workspace</span><select id="run-select" aria-label="Workspace run"></select></label>
+            <label class="field compact"><span>Model</span><select id="model-select" aria-label="Active model"></select></label>
+            <button class="icon-button" id="theme-button" type="button" aria-label="Switch colour theme" title="Switch theme"><svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button>
+            <a class="button primary" href="#/runs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New run</span></a>
+          </div>
+        </header>
+        <div class="context-bar" id="context-bar" aria-live="polite"></div>
+        <main id="view" class="view" tabindex="-1"></main>
+      </div>
+    </div>
+    <div class="scrim" id="scrim" hidden></div>
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/assets/js/main.js"></script>
   </body>
 </html>
