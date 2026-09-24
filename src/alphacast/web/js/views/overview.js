@@ -20,6 +20,10 @@ function verdict(index, model) {
       ? `It beats the 12-1 momentum baseline by ${num(edge, 3)} IC before costs; after ${index.ws.config.transaction_cost_bps} bps costs and ${pct(best.mean_turnover, 0)} average monthly turnover, its net Sharpe is ${num(best.net_sharpe, 2)} against ${num(baseline.net_sharpe, 2)} for momentum.`
       : 'It does not beat the 12-1 momentum baseline, which is the honest bar every model must clear.');
   }
+  const ensemble = index.summaries.ensemble;
+  if (ensemble && leader !== 'ensemble') {
+    sentences.push(`Because ${index.labels[leader]} was singled out after seeing every result, the ensemble fixed in advance is the fairer yardstick: IC ${num(ensemble.mean_rank_ic, 3)} (t = ${num(ensemble.ic_t_stat, 1)}), net Sharpe ${num(ensemble.net_sharpe, 2)}.`);
+  }
   sentences.push(`The equal-weight universe returned a Sharpe of ${num(active.benchmark_sharpe, 2)} over the same periods.`);
   if (health) {
     sentences.push(health.status === 'healthy'
