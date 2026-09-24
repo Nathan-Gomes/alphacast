@@ -36,19 +36,19 @@ SPEED_FACTOR = float(os.environ.get("ALPHACAST_SPEED_FACTOR") or (12 if os.envir
 
 
 class RunPayload(BaseModel):
-    name: str = Field(default="", max_length=60)
-    source: str = Field(default="snapshot", pattern="^(snapshot|yahoo|synthetic)$")
-    universe: str = Field(default="us_large_cap", pattern="^(us_large_cap|starter_30|custom)$")
-    tickers: list[str] = Field(default_factory=list)
+    name: str = Field(default="", max_length=60, description="Label shown in the run history.")
+    source: str = Field(default="snapshot", pattern="^(snapshot|yahoo|synthetic)$", description="snapshot (shipped history), yahoo (live download) or synthetic.")
+    universe: str = Field(default="us_large_cap", pattern="^(us_large_cap|starter_30|custom)$", description="A declared universe, or custom to use `tickers` (Yahoo only).")
+    tickers: list[str] = Field(default_factory=list, description="Custom universe: 10 to 150 symbols.")
     start: str = "2014-01-01"
     end: str = Field(default_factory=lambda: datetime.now(timezone.utc).date().isoformat())
     models: list[str] = Field(default_factory=lambda: list(SUPPORTED_MODELS))
-    top_n: int = Field(default=15, ge=3, le=40)
-    max_per_sector: int | None = Field(default=None, ge=1, le=20)
-    rebalance_every_folds: int = Field(default=1, ge=1, le=3)
-    hold_buffer: int | None = Field(default=None, ge=1, le=150)
-    neutralize_volatility: bool = False
-    transaction_cost_bps: float = Field(default=10.0, ge=0, le=250)
+    top_n: int = Field(default=15, ge=3, le=40, description="Names held in the equal-weight sleeve.")
+    max_per_sector: int | None = Field(default=None, ge=1, le=20, description="Optional cap on names per sector.")
+    rebalance_every_folds: int = Field(default=1, ge=1, le=3, description="Trade every 1, 2 or 3 months; hold in between.")
+    hold_buffer: int | None = Field(default=None, ge=1, le=150, description="Keep a held name while it ranks within this many places (>= top_n).")
+    neutralize_volatility: bool = Field(default=False, description="Residualise scores against 60-session volatility before ranking.")
+    transaction_cost_bps: float = Field(default=10.0, ge=0, le=250, description="One-way trading cost in basis points.")
 
     @field_validator("start", "end")
     @classmethod
@@ -59,7 +59,31 @@ class RunPayload(BaseModel):
             raise ValueError("Dates must be YYYY-MM-DD.") from exc
 
 
-app = FastAPI(title="AlphaCast", version=__version__, docs_url="/api/docs", redoc_url=None)
+API_DESCRIPTION = """
+Walk-forward research API behind the AlphaCast workstation.
+
+**Typical flow:** read `/api/catalog`, `POST /api/runs` with a study, poll
+`/api/runs/{id}` until `status` is `complete`, then read the `workspace` and fetch
+per-stock detail from `/api/runs/{id}/securities/{ticker}`. The run `default` is
+precomputed from the shipped snapshot and is always available.
+
+Runs live in memory, at most three are active at once, and nothing here is
+investment advice.
+"""
+
+TAGS = [
+    {"name": "runs", "description": "Start studies, poll them and read their results."},
+    {"name": "reference", "description": "Options for building a run, and service health."},
+]
+
+app = FastAPI(
+    title="AlphaCast",
+    version=__version__,
+    description=API_DESCRIPTION,
+    openapi_tags=TAGS,
+    docs_url="/api/docs",
+    redoc_url=None,
+)
 
 
 def _content_security_policy() -> str:
@@ -113,8 +137,9 @@ def favicon() -> FileResponse:
     return FileResponse(WEB_DIRECTORY / "favicon.svg")
 
 
-@app.get("/api/health")
+@app.get("/api/health", tags=["reference"])
 def health() -> dict[str, object]:
+    """Service status, version, deployed commit and whether the default workspace loaded."""
     default = registry.get(DEFAULT_RUN_ID)
     return {
         "status": "ok",
@@ -126,7 +151,7 @@ def health() -> dict[str, object]:
     }
 
 
-@app.get("/api/catalog")
+@app.get("/api/catalog", tags=["reference"])
 def catalog() -> dict[str, object]:
     """Everything the run form needs: universes, models, sources, features."""
     return {
@@ -152,13 +177,18 @@ def catalog() -> dict[str, object]:
     }
 
 
-@app.get("/api/runs")
+@app.get("/api/runs", tags=["runs"])
 def list_runs() -> dict[str, object]:
+    """Every run in memory, newest first, with status, progress and a headline result."""
     return {"runs": registry.list()}
 
 
-@app.post("/api/runs", status_code=202)
+@app.post("/api/runs", status_code=202, tags=["runs"])
 def create_run(payload: RunPayload) -> dict[str, object]:
+    """Queue a walk-forward study. Returns 202 with the run's id; poll it for progress.
+
+    Returns 422 for an invalid request and 429 when three runs are already active.
+    """
     models = tuple(dict.fromkeys(model.strip() for model in payload.models if model.strip()))
     unknown = set(models) - set(SUPPORTED_MODELS)
     if unknown:
@@ -209,14 +239,16 @@ def _record(run_id: str):
     return record
 
 
-@app.get("/api/runs/{run_id}")
+@app.get("/api/runs/{run_id}", tags=["runs"])
 def get_run(run_id: str) -> dict[str, object]:
+    """A run's status and, once complete, its full workspace (summaries, periods, live ranks)."""
     record = _record(run_id)
     return {**record.meta(), "workspace": record.workspace}
 
 
-@app.get("/api/runs/{run_id}/securities/{ticker}")
+@app.get("/api/runs/{run_id}/securities/{ticker}", tags=["runs"])
 def get_security(run_id: str, ticker: str) -> dict[str, object]:
+    """One stock's weekly prices, rank history by model and live feature attribution."""
     record = _record(run_id)
     if record.status != "complete" or not record.securities:
         raise HTTPException(409, "This run has not finished.")
@@ -226,8 +258,9 @@ def get_security(run_id: str, ticker: str) -> dict[str, object]:
     return {"ticker": ticker.upper(), **detail}
 
 
-@app.get("/api/runs/{run_id}/export")
+@app.get("/api/runs/{run_id}/export", tags=["runs"])
 def export_run(run_id: str) -> Response:
+    """Download a completed run's metadata and workspace as a JSON file."""
     record = _record(run_id)
     if record.status != "complete":
         raise HTTPException(409, "This run has not finished.")
