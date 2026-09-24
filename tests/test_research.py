@@ -1,3 +1,5 @@
+import pandas as pd
+
 from alphacast import ResearchConfig, run_research, run_study
 from alphacast.data import synthetic_prices
 
@@ -74,3 +76,27 @@ def test_ensemble_averages_member_ranks_without_fitting():
     expected = ensemble_scores([live.ridge, live.elastic_net])
     assert (live.ensemble - expected).abs().max() < 1e-12
     assert run.live.loc[run.live.model == "ensemble", "predicted_relative_return"].isna().all()
+
+
+def test_placebo_labels_leave_no_signal():
+    """Shuffle prices across tickers within each date: any skill left would be leakage."""
+    import numpy as np
+
+    prices = synthetic_prices(sessions=700, securities=20)
+    rng = np.random.default_rng(3)
+    # Permute each date's daily returns across tickers, so tomorrow is unrelated to today.
+    wide = prices.pivot(index="date", columns="ticker", values="adjusted_close")
+    returns = wide.pct_change().fillna(0.0).to_numpy()
+    shuffled = np.array([rng.permutation(row) for row in returns])
+    rebuilt = 100 * np.cumprod(1 + shuffled, axis=0)
+    placebo = prices.copy()
+    placebo["adjusted_close"] = (
+        pd.DataFrame(rebuilt, index=wide.index, columns=wide.columns)
+        .stack()
+        .reindex(pd.MultiIndex.from_frame(prices[["date", "ticker"]]))
+        .to_numpy()
+    )
+    config = ResearchConfig(models=("ridge", "random_forest"), minimum_train_sessions=252)
+    run = run_research(placebo, source="synthetic", config=config)
+    for row in run.summaries.itertuples():
+        assert abs(row.ic_t_stat) < 3, f"{row.model} found signal in shuffled data: t={row.ic_t_stat:.2f}"
