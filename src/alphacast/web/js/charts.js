@@ -97,6 +97,29 @@ function linePath(values, scaleX, scaleY) {
   return path;
 }
 
+/**
+ * Arrow keys, Home and End step through points on a focused chart; the tooltip
+ * anchors to the point instead of the pointer. showAt(index, anchorX) draws it.
+ */
+function keyboardNavigation(svg, count, showAt, hide, scaleX, width) {
+  let current = count - 1;
+  svg.setAttribute('tabindex', '0');
+  svg.setAttribute('aria-describedby', 'chart-keys');
+  const anchor = (index) => {
+    const box = svg.getBoundingClientRect();
+    return { clientX: box.left + (scaleX(index) / width) * box.width, clientY: box.top + box.height * 0.3 };
+  };
+  svg.addEventListener('focus', () => showAt(current, anchor(current)));
+  svg.addEventListener('blur', hide);
+  svg.addEventListener('keydown', (event) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity }[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    current = Math.max(0, Math.min(count - 1, current + (Number.isFinite(step) ? step * (event.shiftKey ? 10 : 1) : step)));
+    showAt(current, anchor(current));
+  });
+}
+
 export function legend(items) {
   return `<div class="legend">${items.map((item) => `<span><i class="${item.dash ? 'dash' : ''}" style="background:${item.color};color:${item.color}"></i>${escapeHtml(item.label)}</span>`).join('')}</div>`;
 }
@@ -154,10 +177,7 @@ export function lineChart(container, {
   const line = hover.querySelector('line');
   const dots = [...hover.querySelectorAll('circle')];
   const hit = svg.querySelector('.hit');
-  const move = (event) => {
-    const box = svg.getBoundingClientRect();
-    const x = ((event.clientX - box.left) / box.width) * width;
-    const index = Math.max(0, Math.min(dates.length - 1, Math.round(((x - margin.left) / (right - margin.left)) * count)));
+  const showAt = (index, event) => {
     const cx = scaleX(index);
     line.setAttribute('x1', cx);
     line.setAttribute('x2', cx);
@@ -171,8 +191,14 @@ export function lineChart(container, {
       label: item.label, color: item.color, value: isNum(item.values[index]) ? tooltipFormat(item.values[index]) : '—',
     }))));
   };
-  hit.addEventListener('pointermove', move);
-  hit.addEventListener('pointerleave', () => { hover.setAttribute('visibility', 'hidden'); hideTooltip(); });
+  const hide = () => { hover.setAttribute('visibility', 'hidden'); hideTooltip(); };
+  hit.addEventListener('pointermove', (event) => {
+    const box = svg.getBoundingClientRect();
+    const x = ((event.clientX - box.left) / box.width) * width;
+    showAt(Math.max(0, Math.min(dates.length - 1, Math.round(((x - margin.left) / (right - margin.left)) * count))), event);
+  });
+  hit.addEventListener('pointerleave', hide);
+  keyboardNavigation(svg, dates.length, showAt, hide, scaleX, width);
 }
 
 /** Signed columns over time with an optional overlay line (e.g. rolling mean). */
@@ -210,18 +236,22 @@ export function columnChart(container, {
   svg.innerHTML = body;
   const cross = svg.querySelector('.crosshair');
   const hit = svg.querySelector('.hit');
-  hit.addEventListener('pointermove', (event) => {
-    const box = svg.getBoundingClientRect();
-    const x = ((event.clientX - box.left) / box.width) * width;
-    const index = Math.max(0, Math.min(values.length - 1, Math.floor((x - margin.left) / slot)));
+  const showAt = (index, event) => {
     cross.setAttribute('x1', scaleX(index));
     cross.setAttribute('x2', scaleX(index));
     cross.setAttribute('visibility', 'visible');
     const rows = tooltipRows ? tooltipRows(index) : [{ label: 'Value', value: yFormat(values[index]) }];
     if (overlay && !tooltipRows) rows.push({ label: overlay.label, color: overlay.color, value: isNum(overlay.values[index]) ? yFormat(overlay.values[index]) : '—' });
     showTooltip(event, tooltipHtml(date(dates[index]), rows));
+  };
+  const hide = () => { cross.setAttribute('visibility', 'hidden'); hideTooltip(); };
+  hit.addEventListener('pointermove', (event) => {
+    const box = svg.getBoundingClientRect();
+    const x = ((event.clientX - box.left) / box.width) * width;
+    showAt(Math.max(0, Math.min(values.length - 1, Math.floor((x - margin.left) / slot))), event);
   });
-  hit.addEventListener('pointerleave', () => { cross.setAttribute('visibility', 'hidden'); hideTooltip(); });
+  hit.addEventListener('pointerleave', hide);
+  keyboardNavigation(svg, values.length, showAt, hide, scaleX, width);
 }
 
 /** Vertical bars for a handful of categories, e.g. quintiles. */
