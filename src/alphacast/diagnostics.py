@@ -271,6 +271,27 @@ def forward_sector_excess(panel: pd.DataFrame, horizon: int) -> pd.Series:
     return forward - forward.groupby([panel.date, panel.sector]).transform("mean")
 
 
+def newey_west_t(values: pd.Series, lags: int) -> float:
+    """t-statistic of a mean with a Newey-West (Bartlett) standard error.
+
+    With ``lags = 0`` it is the ordinary t-statistic. Monthly ICs measured over
+    horizons longer than a month share days with their neighbours, so they are
+    positively correlated and the ordinary standard error is too small.
+    """
+    data = values.dropna().to_numpy(dtype=float)
+    count = len(data)
+    if count < 2:
+        return 0.0
+    centred = data - data.mean()
+    variance = centred @ centred / count
+    for lag in range(1, min(lags, count - 1) + 1):
+        weight = 1 - lag / (lags + 1)
+        variance += 2 * weight * (centred[lag:] @ centred[:-lag]) / count
+    if lags == 0:
+        variance *= count / (count - 1)
+    return ratio(data.mean(), np.sqrt(max(variance, 0.0) / count))
+
+
 def signal_decay(
     panel: pd.DataFrame, history: pd.DataFrame, horizons: tuple[int, ...] = DECAY_HORIZONS
 ) -> pd.DataFrame:
@@ -278,6 +299,8 @@ def signal_decay(
 
     Evaluation only: the models are trained on the 20-session target. A signal whose IC
     falls quickly past 20 sessions is short-lived; one that holds is slower-moving.
+    Folds are monthly (about 21 sessions apart), so a 40- or 60-session outcome overlaps
+    the next one or two folds' outcomes; the t-statistic uses that many Newey-West lags.
     """
     outcomes = panel.loc[:, ["date", "ticker"]].copy()
     for horizon in horizons:
@@ -296,13 +319,15 @@ def signal_decay(
                 )
                 .dropna()
             )
+            overlap = max(int(np.ceil(horizon / 21)) - 1, 0)
             rows.append(
                 {
                     "model": model,
                     "horizon": horizon,
                     "folds": len(ic),
                     "mean_rank_ic": float(ic.mean()) if len(ic) else np.nan,
-                    "ic_t_stat": ratio(ic.mean(), ic.std(ddof=1) / np.sqrt(len(ic))) if len(ic) > 1 else 0.0,
+                    "ic_t_stat": newey_west_t(ic, overlap),
+                    "overlap_lags": overlap,
                 }
             )
     return pd.DataFrame(rows)

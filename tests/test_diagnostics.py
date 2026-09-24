@@ -104,3 +104,19 @@ def test_block_bootstrap_interval_brackets_the_mean_and_widens_with_noise():
     # Deterministic for a fixed seed, and undefined for too few months.
     assert block_bootstrap_interval(calm) == (low, high)
     assert np.isnan(block_bootstrap_interval(calm.head(5))[0])
+
+
+def test_newey_west_matches_the_plain_t_without_lags_and_shrinks_it_under_overlap():
+    import numpy as np
+    import pandas as pd
+
+    from alphacast.diagnostics import newey_west_t, ratio
+
+    rng = np.random.default_rng(11)
+    iid = pd.Series(0.02 + rng.normal(0, 0.1, 200))
+    plain = ratio(iid.mean(), iid.std(ddof=1) / np.sqrt(len(iid)))
+    assert abs(newey_west_t(iid, 0) - plain) < 1e-12
+    # Sums of three consecutive shocks overlap like 60-session outcomes on monthly folds.
+    shocks = rng.normal(0, 0.1, 203)
+    overlapping = pd.Series(0.02 + shocks[:-3] + shocks[1:-2] + shocks[2:-1])
+    assert newey_west_t(overlapping, 2) < 0.8 * newey_west_t(overlapping, 0)
