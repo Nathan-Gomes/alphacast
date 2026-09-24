@@ -1,4 +1,4 @@
-import { columnChart, legend, lineChart } from '../charts.js';
+import { categoryBars, columnChart, legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor } from '../data.js';
 import { cadence, cumulative, date, downloadFile, drawdowns, html, mean, num, pct, raw, rolling, std, toCsv, toneClass } from '../format.js';
 import { term } from '../glossary.js';
@@ -45,6 +45,7 @@ export default {
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}
       </div>
       <div class="section-gap">${raw(panel({ title: 'Cost sensitivity', note: 'Net results rebuilt from gross returns and turnover at any one-way trading cost. The benchmark is untraded.', actions: '<label class="field compact"><span>Cost</span><input id="cost-slider" type="range" min="0" max="100" step="1" aria-label="One-way cost in basis points"><output id="cost-value" class="mono" style="min-width:56px;text-align:right"></output></label>', body: '<div class="grid cols-main"><div><div id="cost-legend"></div><div id="cost-chart"></div></div><div id="cost-readout"></div></div>' }))}</div>
+      <div class="section-gap">${raw(panel({ title: 'Calendar-year returns', note: 'Monthly net returns compounded within each calendar year. Partial first and last years are marked.', body: '<div id="years-chart"></div><div class="table-wrap section-gap" id="years"></div>' }))}</div>
       <div class="grid cols-2 section-gap">
         ${raw(panel({ title: 'Turnover by rebalance', note: 'One-way share of the book traded. The first period is the starting allocation.', body: '<div id="turnover"></div>' }))}
         ${raw(panel({ title: 'Period returns', note: 'Most recent first.', actions: '<button class="button small" id="csv" type="button">Export CSV</button>', body: '<div class="scroll-table" style="max-height:300px" id="periods"></div>', flush: true }))}
@@ -123,6 +124,44 @@ export default {
     slider.value = String(chosenCost ?? index.ws.config.transaction_cost_bps);
     slider.addEventListener('input', update);
     update();
+
+    const byYear = new Map();
+    periods.forEach((row) => {
+      const year = row.date.slice(0, 4);
+      const entry = byYear.get(year) || { year, net: 1, bench: 1, months: 0 };
+      entry.net *= 1 + row.net_return;
+      entry.bench *= 1 + row.benchmark_return;
+      entry.months += 1;
+      byYear.set(year, entry);
+    });
+    const years = [...byYear.values()].map((entry) => ({
+      year: entry.year, months: entry.months,
+      net: entry.net - 1, bench: entry.bench - 1, active: entry.net - entry.bench,
+    }));
+    const beat = years.filter((row) => row.months >= 12 && row.active > 0).length;
+    const full = years.filter((row) => row.months >= 12).length;
+    categoryBars(document.getElementById('years-chart'), {
+      labels: years.map((row) => (row.months < 12 ? `${row.year}*` : row.year)),
+      values: years.map((row) => row.active), height: 200,
+      colors: years.map((row) => (row.active >= 0 ? 'var(--pos)' : 'var(--neg)')),
+      yFormat: (value) => pct(value, 0), label: 'Active return over the universe by calendar year',
+      tooltipRows: (i) => [
+        { label: 'Sleeve, net', value: pct(years[i].net, 1) },
+        { label: 'Universe', value: pct(years[i].bench, 1) },
+        { label: 'Active', value: pct(years[i].active, 1, { sign: true }) },
+        { label: 'Months', value: String(years[i].months) },
+      ],
+    });
+    dataTable(document.getElementById('years'), {
+      rows: years, sortKey: 'year', sortDir: 'desc',
+      columns: [
+        { key: 'year', label: 'Year', render: (row) => (row.months < 12 ? html`${row.year} <span class="muted">(${row.months} mo)</span>` : row.year) },
+        { key: 'net', label: 'Sleeve, net', num: true, render: (row) => html`<span class="${toneClass(row.net)}">${pct(row.net, 1)}</span>` },
+        { key: 'bench', label: 'Universe', num: true, render: (row) => pct(row.bench, 1) },
+        { key: 'active', label: 'Active', num: true, render: (row) => html`<span class="${toneClass(row.active)}">${pct(row.active, 1, { sign: true })}</span>` },
+      ],
+    });
+    document.querySelector('#years').insertAdjacentHTML('afterend', `<p class="note">Beat the universe in ${beat} of ${full} full years.</p>`);
 
     const recent = [...periods].reverse().map((row) => ({ ...row, active: row.net_return - row.benchmark_return }));
     const columns = [
