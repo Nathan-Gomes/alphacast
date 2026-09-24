@@ -117,7 +117,7 @@ export default {
       button.disabled = true;
       try {
         await ctx.submitRun(payload);
-        form.name.value = '';
+        form.elements.namedItem('name').value = '';
       } catch (failure) {
         error.textContent = failure.message;
       } finally {
