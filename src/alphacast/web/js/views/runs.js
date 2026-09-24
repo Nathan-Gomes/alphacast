@@ -7,7 +7,7 @@ const RUN_ESTIMATE = 'Frozen-snapshot runs of all five models take one to three 
 
 function historyHtml(runs, activeId) {
   if (!runs.length) return '<p class="empty">No runs yet.</p>';
-  return `<table><thead><tr><th scope="col">Run</th><th scope="col">Status</th><th scope="col">Dataset</th><th scope="col">Signal</th><th scope="col"></th></tr></thead><tbody>${runs.map((run) => {
+  return `<table><thead><tr><th scope="col">Run</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>${runs.map((run) => {
     const running = run.status === 'running' || run.status === 'queued';
     const progress = running ? `<div class="progress" aria-label="Progress ${Math.round(run.progress * 100)}%"><b style="width:${Math.round(run.progress * 100)}%"></b></div><div class="muted" style="font-size:11.5px;margin-top:3px;white-space:normal">${escapeHtml(run.message)}</div>` : '';
     const error = run.status === 'failed' ? `<div class="neg" style="font-size:12px;white-space:normal;max-width:320px">${escapeHtml(run.error)}</div>` : '';
@@ -15,10 +15,8 @@ function historyHtml(runs, activeId) {
       ? `${run.id === activeId ? '<span class="tag">Active</span>' : `<button class="button small" type="button" data-open="${escapeHtml(run.id)}">Open</button>`} <a class="button small" href="${api.exportUrl(run.id)}" download>JSON</a>`
       : '';
     const models = (run.request?.models || []).length;
-    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px">${escapeHtml(run.request?.source || '')} · ${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
+    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
       <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}</td>
-      <td class="muted" style="white-space:normal">${escapeHtml(run.dataset || '—')}</td>
-      <td>${run.signal_date ? date(run.signal_date) : '—'}</td>
       <td class="num">${actions}</td></tr>`;
   }).join('')}</tbody></table>`;
 }

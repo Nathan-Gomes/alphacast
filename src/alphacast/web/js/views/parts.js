@@ -32,8 +32,7 @@ export function statusBadge(status) {
 export function heatCell(percentile) {
   if (!isNum(percentile)) return '—';
   const step = percentile >= 80 ? 3 : percentile >= 60 ? 2 : percentile >= 40 ? 1 : 0;
-  const ink = step === 3 ? 'color:#fff' : step === 2 ? 'color:#fff' : '';
-  return `<span class="heat" style="background:var(--seq-${step});${ink}">${percentile.toFixed(0)}</span>`;
+  return `<span class="heat s${step}">${percentile.toFixed(0)}</span>`;
 }
 
 export function panel({ title, note = '', body = '', actions = '', id = '', flush = false }) {

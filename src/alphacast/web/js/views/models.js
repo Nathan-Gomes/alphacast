@@ -14,7 +14,7 @@ function heatGrid(index) {
       const value = values[row][feature] || 0;
       const step = value / max;
       const shade = step > 0.66 ? 3 : step > 0.33 ? 2 : step > 0.08 ? 1 : 0;
-      return `<div class="cell" style="background:var(--seq-${shade});${shade >= 2 ? 'color:#fff' : ''}" title="${escapeHtml(index.labels[model])} · ${escapeHtml(index.featureLabels[feature])}: ${pct(value, 1)} of attribution">${value >= 0.005 ? Math.round(value * 100) : ''}</div>`;
+      return `<div class="cell s${shade}" title="${escapeHtml(index.labels[model])} · ${escapeHtml(index.featureLabels[feature])}: ${pct(value, 1)} of attribution">${value >= 0.005 ? Math.round(value * 100) : ''}</div>`;
     }).join('')}`).join('');
   return `<div class="table-wrap"><div class="heatgrid" style="grid-template-columns:150px repeat(${features.length}, minmax(44px, 1fr));min-width:${150 + features.length * 48}px">
     <div></div>${features.map((feature) => `<div class="colhead" title="${escapeHtml(index.featureLabels[feature])}" style="writing-mode:vertical-rl;transform:rotate(180deg);height:110px;text-align:left">${escapeHtml(index.featureLabels[feature])}</div>`).join('')}
