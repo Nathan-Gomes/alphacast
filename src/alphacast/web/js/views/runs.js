@@ -141,7 +141,7 @@ export default {
             <p class="note">Runs live in server memory and reset when the service restarts. Export anything you want to keep.</p>
           </form>
         </section>
-        <section class="panel">
+        <section class="panel align-start">
           <div class="panel-head"><div><h2>Run history</h2><p>The default workspace is precomputed from the frozen snapshot.</p></div></div>
           <div class="panel-body flush table-wrap" id="run-history"></div>
         </section>

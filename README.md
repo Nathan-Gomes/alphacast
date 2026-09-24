@@ -117,6 +117,10 @@ python scripts/a11y_audit.py --axe node_modules/axe-core/axe.min.js --base http:
 .venv/bin/alphacast --source snapshot --output output/run.json   # CLI run
 ```
 
+## Reproducibility
+
+The default workspace is deterministic: the price snapshot is frozen in the repository, every model has a fixed seed, and hyperparameters are declared in source. Rebuilding it with `scripts/build_default_run.py` reproduces the committed `default_run.json.gz` exactly apart from its creation timestamp, so every figure in this README, the case study and the app can be regenerated from a clean checkout.
+
 ## API
 
 | Method | Path | |

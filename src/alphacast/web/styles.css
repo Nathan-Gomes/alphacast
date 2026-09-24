@@ -205,6 +205,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); outline:
 .panel-body { padding: 12px 16px 16px; }
 .panel-body.flush { padding: 10px 0 4px; }
 .note { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; line-height: 1.5; }
+.align-start { align-self: start; }
 .table-note { margin: 0; padding: 10px 16px 12px; }
 .section-gap { margin-top: 16px; }
 
