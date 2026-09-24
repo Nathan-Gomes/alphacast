@@ -29,6 +29,30 @@ class StudyResult:
     monthly: pd.DataFrame
 
 
+@dataclass(frozen=True)
+class DataQualityReport:
+    """Coverage checks for an input price panel."""
+
+    source: str
+    requested_tickers: int
+    accepted_tickers: int
+    sessions: int
+    first_date: pd.Timestamp
+    last_date: pd.Timestamp
+    missing_observations: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "source": self.source,
+            "requested_tickers": self.requested_tickers,
+            "accepted_tickers": self.accepted_tickers,
+            "sessions": self.sessions,
+            "first_date": self.first_date.date().isoformat(),
+            "last_date": self.last_date.date().isoformat(),
+            "missing_observations": self.missing_observations,
+        }
+
+
 def monthly_dates(dates: pd.DatetimeIndex) -> Iterator[pd.Timestamp]:
     """The final available session of each calendar month."""
     unique = pd.DatetimeIndex(dates.unique()).sort_values()

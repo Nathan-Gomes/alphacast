@@ -7,10 +7,20 @@ name = "alphacast"
 version = "0.1.0"
 description = "Walk-forward systematic equity ranking research"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.26", "pandas>=2.1", "scikit-learn>=1.4"]
+dependencies = [
+  "fastapi>=0.115",
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "scikit-learn>=1.4",
+  "uvicorn>=0.30",
+  "yfinance>=0.2.50",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["httpx>=0.27", "pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+alphacast = "alphacast.cli:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
