@@ -63,6 +63,7 @@ class ResearchRun:
     live: pd.DataFrame
     profiles: pd.DataFrame
     drift: pd.DataFrame
+    sectors: pd.DataFrame
     history: pd.DataFrame
     attribution: pd.DataFrame
     weekly_prices: pd.DataFrame
@@ -102,6 +103,7 @@ class ResearchRun:
             "live": _records(self.live),
             "profiles": _records(self.profiles),
             "drift": _records(self.drift),
+            "sectors": _records(self.sectors),
             "limits": LIMITS,
         }
 
@@ -316,6 +318,40 @@ def _feature_drift(panel: pd.DataFrame, recent_sessions: int = 63) -> pd.DataFra
     return pd.DataFrame(rows).sort_values("psi", ascending=False)
 
 
+def _sector_summary(history: pd.DataFrame, sector_of: pd.Series) -> pd.DataFrame:
+    """Where each model's ranking works, and where its portfolio leans, by sector.
+
+    The target is already sector-relative, so a within-sector Rank IC asks whether the
+    model orders stocks correctly inside each sector. Active weight compares the
+    top-ranked sleeve's sector share with the universe's, averaged over folds.
+    """
+    frame = history.assign(sector=history.ticker.map(sector_of))
+    rows: list[dict[str, object]] = []
+    for (model, sector), group in frame.groupby(["model", "sector"], sort=False):
+        per_date = group.groupby("date")
+        ic = per_date.apply(
+            lambda rows: rows.percentile.corr(rows.realized, method="spearman")
+            if len(rows) >= 4
+            else np.nan,
+            include_groups=False,
+        ).dropna()
+        held = frame.loc[frame.model == model].groupby("date")
+        sleeve_share = per_date.held.sum() / held.held.sum()
+        universe_share = per_date.size() / held.size()
+        rows.append(
+            {
+                "model": model,
+                "sector": sector,
+                "names": int(group.ticker.nunique()),
+                "folds": len(ic),
+                "mean_rank_ic": float(ic.mean()) if len(ic) else np.nan,
+                "positive_ic_rate": float((ic > 0).mean()) if len(ic) else np.nan,
+                "mean_active_weight": float((sleeve_share - universe_share).mean()),
+            }
+        )
+    return pd.DataFrame(rows).sort_values(["model", "mean_active_weight"], ascending=[True, False])
+
+
 def _weekly_prices(prices: pd.DataFrame) -> pd.DataFrame:
     frame = prices.loc[:, ["date", "ticker", "adjusted_close"]].copy()
     frame["date"] = pd.to_datetime(frame.date)
@@ -499,6 +535,7 @@ def run_research(
         completed += 1
 
     report(0.97, "Summarising diagnostics")
+    history_frame = pd.concat(history, ignore_index=True)
     period_frame = pd.DataFrame(periods).sort_values(["model", "date"]).reset_index(drop=True)
     summaries = pd.DataFrame(
         [_summary(model, group) for model, group in period_frame.groupby("model", sort=False)]
@@ -549,7 +586,10 @@ def run_research(
         live=pd.concat(live_frames, ignore_index=True),
         profiles=profiles,
         drift=_feature_drift(full_panel).reset_index(drop=True),
-        history=pd.concat(history, ignore_index=True),
+        sectors=_sector_summary(
+            history_frame, live_rows.set_index("ticker").sector
+        ).reset_index(drop=True),
+        history=history_frame,
         attribution=pd.concat(attribution_frames, ignore_index=True),
         weekly_prices=_weekly_prices(prices),
         signal_date=signal_date,

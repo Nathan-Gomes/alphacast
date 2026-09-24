@@ -1,6 +1,6 @@
-import { categoryBars, columnChart } from '../charts.js';
+import { categoryBars, columnChart, hbars } from '../charts.js';
 import { modelColor } from '../data.js';
-import { html, mean, num, pct, raw, rolling, toneClass } from '../format.js';
+import { html, mean, num, pct, raw, rolling, sectorShort, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
 import { panel } from './parts.js';
 
@@ -34,6 +34,10 @@ export default {
         ${raw(panel({ title: 'Average return by quintile', note: 'Mean realised 20-session return relative to sector. With predictive power, Q1 > Q2 > … > Q5.', body: '<div id="quintiles"></div>' }))}
         ${raw(panel({ title: 'Distribution of monthly IC', note: `Bins of 0.05.${outside ? ` ${outside} month(s) fall outside ±0.40.` : ''}`, body: '<div id="hist"></div>' }))}
       </div>
+      <div class="grid cols-2 section-gap" id="sector-row">
+        ${raw(panel({ title: 'Ranking skill by sector', note: 'Mean Rank IC among stocks in the same sector. Sectors with few names are noisy.', body: '<div id="sector-bars"></div>' }))}
+        ${raw(panel({ title: 'Sector detail', note: 'Active weight: the top-ranked sleeve\'s sector share minus the universe\'s, averaged over folds.', body: '<div id="sector-table"></div>', flush: true }))}
+      </div>
       <div class="section-gap">${raw(panel({ title: 'Performance by market regime', note: 'Each month is labelled with trailing information only: 63-session market return sets expansion or contraction; 20-session market volatility above the training-window median sets high vol. These are diagnostics, not tuning targets.', body: '<div id="regimes"></div>', flush: true }))}</div>`;
 
     const color = modelColor(model);
@@ -61,6 +65,26 @@ export default {
       yFormat: (value) => String(Math.round(value)), label: 'Histogram of monthly Rank IC',
       tooltipRows: (i) => [{ label: 'Range', value: `${edges[i].toFixed(2)} to ${edges[i + 1].toFixed(2)}` }, { label: 'Months', value: String(counts[i]) }],
     });
+    const sectors = (index.ws.sectors || []).filter((row) => row.model === model);
+    if (!sectors.length) {
+      document.getElementById('sector-row').hidden = true;
+    } else {
+      document.getElementById('sector-bars').innerHTML = hbars(
+        [...sectors].sort((a, b) => b.mean_rank_ic - a.mean_rank_ic)
+          .map((row) => ({ label: `${sectorShort(row.sector)} (${row.names})`, value: row.mean_rank_ic ?? 0 })),
+        { signed: true, format: (value) => num(value, 3, { sign: true }), color, negativeColor: 'var(--neg)' },
+      );
+      dataTable(document.getElementById('sector-table'), {
+        rows: sectors, sortKey: 'mean_active_weight',
+        columns: [
+          { key: 'sector', label: 'Sector', render: (row) => html`${sectorShort(row.sector)} <span class="muted">(${row.names})</span>` },
+          { key: 'mean_rank_ic', label: 'Mean IC', num: true, render: (row) => html`<span class="${toneClass(row.mean_rank_ic)}">${num(row.mean_rank_ic, 3)}</span>` },
+          { key: 'positive_ic_rate', label: 'IC > 0', num: true, render: (row) => pct(row.positive_ic_rate, 0) },
+          { key: 'mean_active_weight', label: 'Active weight', num: true, render: (row) => pct(row.mean_active_weight, 1, { sign: true }) },
+        ],
+      });
+    }
+
     dataTable(document.getElementById('regimes'), {
       rows: index.regimes[model], sortKey: 'folds',
       columns: [

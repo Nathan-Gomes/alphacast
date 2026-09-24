@@ -51,3 +51,14 @@ def test_batched_attribution_matches_one_feature_at_a_time():
         occluded = matrix.copy()
         occluded[:, position] = 0.0
         assert np.allclose(batched[feature], base - ranker.estimator.predict(occluded))
+
+
+def test_sector_summary_covers_every_model_and_sector():
+    config = ResearchConfig(models=("momentum", "ridge"), minimum_train_sessions=252)
+    run = run_research(synthetic_prices(sessions=700, securities=24), source="synthetic", config=config)
+    sectors = run.sectors
+    assert set(sectors.model) == {"momentum", "ridge"}
+    assert sectors.groupby("model").sector.nunique().eq(6).all()
+    assert sectors.mean_rank_ic.between(-1, 1).all()
+    # Active weights across sectors net to zero for a fully invested sleeve.
+    assert sectors.groupby("model").mean_active_weight.sum().abs().lt(1e-9).all()
