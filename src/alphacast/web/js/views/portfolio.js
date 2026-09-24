@@ -1,6 +1,6 @@
 import { hbars, pairedBars } from '../charts.js';
 import { liveRows } from '../data.js';
-import { cadence, html, mean, num, pct, raw, sectorShort, toneClass } from '../format.js';
+import { cadence, downloadFile, html, mean, num, pct, raw, sectorShort, toCsv, toneClass } from '../format.js';
 
 const median = (values) => {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
@@ -41,7 +41,7 @@ export default {
         <div class="kpi"><div class="label">Largest sector</div><div class="value">${pct(sectors[0].held, 0)}</div><div class="sub">${sectorShort(sectors[0].sector)} · universe ${pct(sectors[0].universe, 0)}</div></div>
       </div>
       <div class="grid cols-main">
-        ${raw(panel({ title: 'Target holdings', note: 'Weights if the book were rebalanced at the latest close.', body: '<div id="holdings"></div>', flush: true }))}
+        ${raw(panel({ title: 'Target holdings', note: 'Weights if the book were rebalanced at the latest close.', actions: '<button class="button small" id="holdings-csv" type="button">Export CSV</button>', body: '<div id="holdings"></div>', flush: true }))}
         <div class="stack">
           ${raw(panel({ title: 'Sector allocation', note: 'Portfolio weight against the equal-weight universe.', body: `
             ${pairedBars(sectors.map((row) => ({
@@ -83,6 +83,15 @@ export default {
         { key: 'was_held', label: 'Status', sort: (row) => (row.was_held ? 1 : 0), render: (row) => (row.was_held ? '<span class="tag">Held</span>' : '<span class="tag new">Entering</span>') },
       ],
     });
+    document.getElementById('holdings-csv').addEventListener('click', () => downloadFile(
+      `alphacast-${model}-portfolio-${index.ws.signal_date}.csv`,
+      toCsv(holdings, [
+        { key: 'rank', label: 'rank' }, { key: 'ticker', label: 'ticker' }, { key: 'sector', label: 'sector' },
+        { key: 'weight', label: 'weight', csv: (row) => row.weight.toFixed(6) },
+        { key: 'percentile', label: 'score_percentile', csv: (row) => row.percentile.toFixed(2) },
+        { key: 'was_held', label: 'status', csv: (row) => (row.was_held ? 'held' : 'entering') },
+      ]),
+    ));
     const small = [
       { key: 'ticker', label: 'Ticker', render: (row) => tickerLink(row.ticker) },
       { key: 'rank', label: 'Rank now', num: true },
