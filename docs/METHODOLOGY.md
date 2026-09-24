@@ -70,6 +70,7 @@ For the linear models this is exactly coefficient times centred rank. For the tr
 
 - **Rank IC:** Spearman correlation between score and realised outcome in each fold. Reported as a mean, volatility, information ratio, t-statistic (`mean / (sd / sqrt(n))`), and share of positive months.
 - **Significance:** a two-sided p-value for mean Rank IC from the t-statistic with `n - 1` degrees of freedom, and a Holm step-down adjustment across every model in the run. Reporting the best of several models without that adjustment overstates the evidence: Random Forest's p = 0.018 becomes 0.11.
+- **Market exposure:** an OLS regression of the sleeve's monthly net returns on the universe's gives beta, annualised alpha (intercept x 12) and the alpha t-statistic. The machine-learning sleeves have betas of 1.2 to 1.4, so part of their excess return is exposure to a rising market rather than stock selection.
 - **Quintiles:** the average realised outcome of each score quintile; Q1 − Q5 spread; how often all five are in order.
 - **Portfolio:** an equal-weight long-only sleeve of the top 15 names, held for 20 sessions. One-way turnover times the declared basis-point cost is subtracted. Benchmark: the equal-weight universe over the same periods. The first period is treated as the starting allocation and is not charged.
 - **Regimes:** each test date is labelled with trailing information only. The 63-session universe return sets expansion or contraction. 20-session universe volatility above the training window's median sets high volatility.
