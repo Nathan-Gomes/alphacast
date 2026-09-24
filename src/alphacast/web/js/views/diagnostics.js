@@ -36,7 +36,7 @@ export default {
         ${raw(panel({ title: 'Average return by quintile', note: 'Mean realised 20-session return relative to sector. With predictive power, Q1 > Q2 > … > Q5.', body: '<div id="quintiles"></div>' }))}
         ${raw(panel({ title: 'Distribution of monthly IC', note: `Bins of 0.05.${outside ? ` ${outside} month(s) fall outside ±0.40.` : ''}`, body: '<div id="hist"></div>' }))}
       </div>
-      <div class="section-gap" id="decay-row">${raw(panel({ title: 'Signal decay', note: 'Mean Rank IC of each month\'s scores against sector-relative returns over different horizons. Models are trained for 20 sessions; a fast fall-off means a short-lived signal. Green: |t| of 2 or more; hover a value for its t-statistic. At 40 and 60 sessions each outcome overlaps the next one or two months\', so those t-statistics use Newey–West standard errors. Thirty cells are shown, so expect one or two to clear 2 by chance.', body: '<div class="table-wrap" id="decay"></div>', flush: true }))}</div>
+      <div class="section-gap" id="decay-row">${raw(panel({ title: 'Signal decay', note: 'Mean Rank IC of each month\'s scores against sector-relative returns over 5 to 60 sessions ahead (columns). Models are trained for 20 sessions; a fast fall-off means a short-lived signal. Green: |t| of 2 or more; hover a value for its t-statistic. At 40 and 60 sessions each outcome overlaps the next one or two months\', so those t-statistics use Newey–West standard errors. Thirty cells are shown, so expect one or two to clear 2 by chance.', body: '<div class="table-wrap" id="decay"></div>', flush: true }))}</div>
       <div class="grid cols-2 section-gap" id="sector-row">
         ${raw(panel({ title: 'Ranking skill by sector', note: 'Mean Rank IC among stocks in the same sector. Sectors with few names are noisy.', body: '<div id="sector-bars"></div>' }))}
         ${raw(panel({ title: 'Sector detail', note: 'Active weight: the top-ranked sleeve\'s sector share minus the universe\'s, averaged over folds.', body: '<div id="sector-table"></div>', flush: true }))}
@@ -83,7 +83,7 @@ export default {
         columns: [
           { key: 'label', label: 'Model', render: (row) => html`<span class="dot" style="background:${raw(modelColor(row.model))}"></span>${row.label}` },
           ...horizons.map((h) => ({
-            key: `h${h}`, label: h === target ? `${h} sessions (target)` : `${h} sessions`, num: true,
+            key: `h${h}`, label: h === target ? `${h} · target` : `${h}`, num: true, title: `Outcome ${h} sessions ahead`,
             render: (row) => {
               const found = cell(row.model, h);
               if (!found) return '—';
