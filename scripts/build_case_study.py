@@ -129,6 +129,11 @@ def _random_forest_variant(end: str, **options) -> dict:
     return run.summaries.iloc[0].to_dict()
 
 
+def _and_list(items: list[str]) -> str:
+    """'a', 'a and b', 'a, b and c'."""
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def _test_count() -> int:
     """Collected pytest cases, so the page never quotes a stale number."""
     import subprocess
@@ -263,6 +268,14 @@ def main(output: Path) -> None:
         x_ticks=[(i, f"{h} sessions") for i, h in enumerate(horizons)],
     ) if horizons else ""
     rf_decay = {r["horizon"]: r["mean_rank_ic"] for r in decay if r["model"] == "random_forest"}
+    years: dict[str, list[float]] = {}
+    for row in rf_periods:
+        entry = years.setdefault(row["date"][:4], [1.0, 1.0, 0])
+        entry[0] *= 1 + row["net_return"]
+        entry[1] *= 1 + row["benchmark_return"]
+        entry[2] += 1
+    full_years = {y: v[0] - v[1] for y, v in years.items() if v[2] >= 12}
+    top_years = sorted(full_years, key=full_years.get, reverse=True)[:3]
     quarterly = _random_forest_variant(ws["config"]["end"], rebalance_every_folds=3)
     buffered = _random_forest_variant(ws["config"]["end"], hold_buffer=23)
     capped = _random_forest_variant(ws["config"]["end"], max_per_sector=2)
@@ -318,6 +331,9 @@ def main(output: Path) -> None:
         top_sector=top_sector["sector"] if top_sector else "",
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
+        years_beat=sum(v > 0 for v in full_years.values()),
+        years_full=len(full_years),
+        top_years=_and_list(sorted(top_years)),
         decay_svg=decay_svg,
         decay_legend=legend(decay_series) if decay_series else "",
         q_sharpe=f"{quarterly['net_sharpe']:.2f}",
