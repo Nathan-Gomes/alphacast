@@ -113,3 +113,31 @@ def hold_portfolio(rows: pd.DataFrame, weights: pd.Series) -> PortfolioStep:
         transaction_cost=0.0,
         holdings=tuple(weights.index),
     )
+
+
+def run_sleeve(
+    cross_sections: list[tuple[pd.DataFrame, pd.Series]],
+    *,
+    top_n: int,
+    transaction_cost_bps: float,
+    rebalance_every: int = 1,
+    max_per_sector: int | None = None,
+    hold_buffer: int | None = None,
+) -> list[tuple[PortfolioStep, pd.Series]]:
+    """Walk a sleeve through consecutive (rows, scores) cross-sections.
+
+    It rebalances every ``rebalance_every`` periods and holds the book unchanged in
+    between. Each element is the period's step and the weights held over it.
+    """
+    weights: pd.Series | None = None
+    path: list[tuple[PortfolioStep, pd.Series]] = []
+    for position, (rows, scores) in enumerate(cross_sections):
+        if weights is not None and position % max(rebalance_every, 1):
+            step = hold_portfolio(rows, weights)
+        else:
+            step, weights = top_ranked_portfolio(
+                rows, scores, weights, top_n=top_n, transaction_cost_bps=transaction_cost_bps,
+                max_per_sector=max_per_sector, hold_buffer=hold_buffer,
+            )
+        path.append((step, weights))
+    return path
