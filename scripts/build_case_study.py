@@ -331,6 +331,16 @@ def main(output: Path) -> None:
         top_sector=top_sector["sector"] if top_sector else "",
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
+        rf_beta=f"{rf['beta']:.2f}",
+        rf_alpha=pct(rf["alpha_annualized"], 1),
+        rf_alpha_t=f"{rf['alpha_t_stat']:.1f}",
+        mom_beta=f"{mom['beta']:.2f}",
+        mom_alpha=pct(mom["alpha_annualized"], 1),
+        mom_alpha_t=f"{mom['alpha_t_stat']:.1f}",
+        ml_beta_range=(
+            f"{min(summaries[m]['beta'] for m in summaries if m != 'momentum'):.1f} to "
+            f"{max(summaries[m]['beta'] for m in summaries if m != 'momentum'):.1f}"
+        ),
         years_beat=sum(v > 0 for v in full_years.values()),
         years_full=len(full_years),
         top_years=_and_list(sorted(top_years)),

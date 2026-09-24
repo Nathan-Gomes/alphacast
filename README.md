@@ -44,7 +44,7 @@ Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd> anywhere to jump to a 
 | Momentum 12-1 (baseline) | 0.006 | 0.37 | 1.22 | 25% |
 | Equal-weight universe | | | 1.09 | |
 
-Random Forest has the only t-statistic above 2 (p = 0.018), but adjusted for comparing six models its p-value is 0.11: suggestive, not conclusive. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its long-run record, and the monitoring view flags all six as degraded. Because Random Forest was singled out after seeing the results, the ensemble, fixed in advance, is the fairer estimate of what machine learning adds here. The signal is modest and it is not stationary.
+Random Forest has the only t-statistic above 2 (p = 0.018), but adjusted for comparing six models its p-value is 0.11: suggestive, not conclusive. Its sleeve also has a beta of 1.30 to the universe; after removing that exposure its alpha is about 6% a year (t = 1.7), no larger than momentum's. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its long-run record, and the monitoring view flags all six as degraded. Because Random Forest was singled out after seeing the results, the ensemble, fixed in advance, is the fairer estimate of what machine learning adds here. The signal is modest and it is not stationary.
 
 ## How it works
 

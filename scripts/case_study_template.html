@@ -71,7 +71,7 @@
           <p class="eyebrow"><span class="live-badge">Current focus &nbsp;/&nbsp; Machine-learning equity research</span></p>
           <h1>AlphaCast</h1>
           <p class="deck">A research workstation that ranks 98 US large caps by their expected return against their own sector over the next 20 trading sessions, tests six models (five plus an ensemble) on the same walk-forward folds, and turns the ranking into a portfolio it keeps monitoring.</p>
-          <div class="verdict"><strong>The verdict:</strong> Random Forest found the strongest ranking signal (Rank IC {rf_ic}, t = {rf_t}, p = {rf_p}) and it survived costs, but once six models are compared the evidence is suggestive rather than conclusive (Holm-adjusted p = {rf_holm}). The edge is concentrated in volatile markets, most models did not beat plain momentum, and every model has weakened over the last six months.</div>
+          <div class="verdict"><strong>The verdict:</strong> Random Forest found the strongest ranking signal (Rank IC {rf_ic}, t = {rf_t}, p = {rf_p}) and it survived costs, but much of its excess return is market exposure (beta {rf_beta}), and once six models are compared the evidence is suggestive rather than conclusive (Holm-adjusted p = {rf_holm}). The edge is concentrated in volatile markets, most models did not beat plain momentum, and every model has weakened over the last six months.</div>
           <div class="btnrow">
             <a class="btn btn-primary" href="https://alphacast.onrender.com" target="_blank" rel="noreferrer">Launch the app</a>
             <a class="btn btn-ghost" href="https://github.com/Nathan-Gomes/alphacast/blob/main/docs/METHODOLOGY.md" target="_blank" rel="noreferrer">Read the methodology</a>
@@ -128,7 +128,7 @@
         <div class="takeaway">
           <span class="takeaway-n">2</span>
           <h3>Most machine learning did not beat momentum</h3>
-          <p>Ridge, Elastic Net and gradient boosting all reached about <b>0.010</b> IC, above momentum's <b>{mom_ic}</b> but within noise, and after turnover their Sharpe ratios fell <b>below</b> momentum's {mom_sharpe}. Model complexity was not what made the difference.</p>
+          <p>Ridge, Elastic Net and gradient boosting all reached about <b>0.010</b> IC, above momentum's <b>{mom_ic}</b> but within noise, and after turnover their Sharpe ratios fell <b>below</b> momentum's {mom_sharpe}. The machine-learning sleeves also carry more market risk (beta {ml_beta_range}), which flatters them in a rising decade. Model complexity was not what made the difference.</p>
         </div>
         <div class="takeaway">
           <span class="takeaway-n">3</span>
@@ -175,7 +175,7 @@
         {growth_svg}
         {growth_legend}
       </div>
-      <div class="readout"><b>How to read it:</b> the universe itself compounded strongly (a {bench_sharpe} Sharpe for an equal-weight basket of today's large caps, flattered by survivorship). Random Forest's edge over it works out to an information ratio of <b>{rf_ir}</b>, bought with a deeper worst drawdown ({rf_dd} against {bench_dd}) and {rf_cost} a year in trading costs. The edge is lumpy: the sleeve beat the universe in {years_beat} of {years_full} full calendar years, and most of the gain came from {top_years}.</div>
+      <div class="readout"><b>How to read it:</b> the universe itself compounded strongly (a {bench_sharpe} Sharpe for an equal-weight basket of today's large caps, flattered by survivorship). Random Forest's edge over it works out to an information ratio of <b>{rf_ir}</b>, bought with a deeper worst drawdown ({rf_dd} against {bench_dd}) and {rf_cost} a year in trading costs. The edge is lumpy: the sleeve beat the universe in {years_beat} of {years_full} full calendar years, and most of the gain came from {top_years}. Much of it is also market exposure: the sleeve's beta to the universe is <b>{rf_beta}</b>, and the alpha left after removing it is {rf_alpha} a year (t = {rf_alpha_t}), no larger than momentum's {mom_alpha} (t = {mom_alpha_t}, beta {mom_beta}).</div>
     </section>
 
     <section id="models" style="padding:80px 0 0">
