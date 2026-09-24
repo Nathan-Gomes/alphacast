@@ -12,6 +12,7 @@ import gzip
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,13 +74,11 @@ def line_chart(series: list[dict], dates: list[str], *, y_format, label: str, ba
     else:
         raw_step = (hi - lo) / 5
         magnitude = 10 ** math.floor(math.log10(raw_step))
-        step = min((m * magnitude for m in (1, 2, 2.5, 5, 10) if m * magnitude >= raw_step))
+        step = min(m * magnitude for m in (1, 2, 2.5, 5, 10) if m * magnitude >= raw_step)
         first = math.ceil(lo / step) * step
         ticks = [round(first + k * step, 10) for k in range(int((hi - first) / step) + 1)]
-    parts = [
-        f'<svg viewBox="0 0 {width} {height + 24}" role="img" aria-label="{label}" '
-        "style=\"width:100%;height:auto;font-family:'IBM Plex Mono',monospace\">"
-    ]
+    svg_style = "width:100%;height:auto;font-family:'IBM Plex Mono',monospace"
+    parts = [f'<svg viewBox="0 0 {width} {height + 24}" role="img" aria-label="{label}" style="{svg_style}">']
     for tick in ticks:
         y = sy(tick)
         parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{right}" y2="{y:.1f}" stroke="#e6e2db" stroke-width="1"/>')
@@ -126,7 +125,10 @@ def main(output: Path) -> None:
     rf_periods = periods["random_forest"]
     folds = len(rf_periods)
     first, last = rf_periods[0]["date"], rf_periods[-1]["date"]
-    month = lambda day: __import__("datetime").date.fromisoformat(day).strftime("%b %Y")  # noqa: E731
+
+    def month(day: str) -> str:
+        return date.fromisoformat(day).strftime("%b %Y")
+
     degraded = sum(row["status"] == "degraded" for row in monitoring.values())
     calm = next(row for row in regimes if row["regime"] == "Expansion / low vol")
     stressed = [row for row in regimes if row["regime"].endswith("high vol")]
@@ -177,7 +179,7 @@ def main(output: Path) -> None:
 
     template = (ROOT / "scripts" / "case_study_template.html").read_text()
     style_path = output.parent / STYLE_SOURCE
-    style = re.search(r"<style>.*?</style>", style_path.read_text(), re.S).group(0)
+    style = re.search(r"<style>.*?</style>", style_path.read_text(), re.DOTALL).group(0)
     page = template.format(
         style=style,
         folds=folds,
