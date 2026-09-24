@@ -87,14 +87,14 @@ def line_chart(
     for tick in ticks:
         y = sy(tick)
         parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{right}" y2="{y:.1f}" stroke="#e6e2db" stroke-width="1"/>')
-        parts.append(f'<text x="{left - 8}" y="{y + 3.5:.1f}" text-anchor="end" font-size="10" fill="#a2a5a8">{y_format(tick)}</text>')
+        parts.append(f'<text x="{left - 8}" y="{y + 3.5:.1f}" text-anchor="end" font-size="10" fill="#686c71">{y_format(tick)}</text>')
     if x_ticks is None:
         years: dict[str, int] = {}
         for i, day in enumerate(dates):
             years.setdefault(day[:4], i)
         x_ticks = [(i, year) for year, i in years.items() if int(year) % 2 == 1 or i == 0]
     for i, text in x_ticks:
-        parts.append(f'<text x="{sx(i):.1f}" y="{bottom + 18}" text-anchor="middle" font-size="10" fill="#a2a5a8">{text}</text>')
+        parts.append(f'<text x="{sx(i):.1f}" y="{bottom + 18}" text-anchor="middle" font-size="10" fill="#686c71">{text}</text>')
     if baseline is not None:
         y = sy(baseline)
         parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{right}" y2="{y:.1f}" stroke="#16181a" stroke-width="1"/>')
@@ -189,8 +189,8 @@ def main(output: Path) -> None:
         cls = ' class="win"' if model == "random_forest" else ""
         tag = {
             "random_forest": '<span class="tag">Strongest</span>',
-            "momentum": ' <span style="color:#a2a5a8">(baseline)</span>',
-            "ensemble": ' <span style="color:#a2a5a8">(declared in advance)</span>',
+            "momentum": ' <span style="color:#686c71">(baseline)</span>',
+            "ensemble": ' <span style="color:#686c71">(declared in advance)</span>',
         }.get(model, "")
         rows_html.append(
             f"<tr{cls}><td>{LABELS[model]}{tag}</td><td>{s['mean_rank_ic']:.3f}</td><td>{s['ic_t_stat']:.2f}</td><td>{s['p_value_holm']:.2f}</td>"

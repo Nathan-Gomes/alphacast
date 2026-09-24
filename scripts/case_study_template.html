@@ -18,10 +18,12 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet">
 {style}
 <style>
+  /* Text greys stepped to clear 4.5:1 on every surface of this page. */
+  :root {{ --muted: #686c71; --faint: #686c71; }}
   .shot {{ margin-top: 26px; border: 1px solid #1c2631; background: #0b0f14; }}
   .shot img {{ display: block; width: 100%; height: auto; }}
   .shots {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }}
-  .shots figcaption {{ padding: 12px 14px; background: var(--card); border-top: 1px solid var(--line); font-size: 14px; line-height: 1.5; color: var(--body); }}
+  .shot figcaption {{ padding: 12px 14px; background: var(--card); border-top: 1px solid var(--line); font-size: 14px; line-height: 1.5; color: var(--body); }}
   .views {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 26px; }}
   .views .step p {{ color: var(--body); }}
   .live-badge {{ display: inline-flex; align-items: center; gap: 8px; }}
@@ -37,14 +39,14 @@
   <header style="display:flex;align-items:baseline;justify-content:space-between;gap:32px;padding:26px 0;border-bottom:1px solid #e6e2db">
     <a href="/" style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;color:#16181a;font-weight:500">Nathan&nbsp;Gomes</a>
     <nav style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase">
-      <a href="/#projects" style="text-decoration:none;color:#7a7e83">Projects</a>
+      <a href="/#projects" style="text-decoration:none;color:#686c71">Projects</a>
       <a href="https://alphacast.onrender.com" target="_blank" rel="noreferrer" style="text-decoration:none;color:#1a6f57">Live app</a>
-      <a href="https://github.com/Nathan-Gomes/alphacast" target="_blank" rel="noreferrer" style="text-decoration:none;color:#7a7e83">GitHub</a>
+      <a href="https://github.com/Nathan-Gomes/alphacast" target="_blank" rel="noreferrer" style="text-decoration:none;color:#686c71">GitHub</a>
     </nav>
   </header>
 </div>
 
-<div class="skimnav">
+<nav class="skimnav" aria-label="Sections">
   <div class="wrap">
     <div class="skimnav-inner">
       <a href="#result">01 &nbsp;Result</a>
@@ -58,7 +60,7 @@
       <a href="#next">09 &nbsp;Next</a>
     </div>
   </div>
-</div>
+</nav>
 
 <div class="wrap">
   <main>
@@ -116,7 +118,7 @@
     </section>
 
     <section style="padding:56px 0 0">
-      <p class="eyebrow" style="margin-bottom:22px">The thirty-second version</p>
+      <h2 class="eyebrow" style="margin-bottom:22px">The thirty-second version</h2>
       <div class="takeaways">
         <div class="takeaway">
           <span class="takeaway-n">1</span>
@@ -317,8 +319,8 @@
   </main>
 </div>
 <div class="wrap">
-  <footer style="display:flex;justify-content:space-between;gap:24px;padding:26px 0;border-top:1px solid #e6e2db;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#7a7e83">
-    <span>AlphaCast &middot; Nathan Gomes</span><a href="/#projects" style="color:#7a7e83;text-decoration:none">All projects</a>
+  <footer style="display:flex;justify-content:space-between;gap:24px;padding:26px 0;border-top:1px solid #e6e2db;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#686c71">
+    <span>AlphaCast &middot; Nathan Gomes</span><a href="/#projects" style="color:#686c71;text-decoration:none">All projects</a>
   </footer>
 </div>
 </body>
