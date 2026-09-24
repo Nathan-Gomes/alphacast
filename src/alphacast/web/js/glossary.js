@@ -6,6 +6,7 @@ export const DEFINITIONS = {
   rank_ic: ['Rank IC', 'Spearman correlation between a model\'s scores and the realised sector-relative returns in one month. 0 is no skill; real equity signals are usually 0.02 to 0.05.'],
   ic_ir: ['IC information ratio', 'Mean Rank IC divided by its month-to-month volatility: how consistent the ranking skill is.'],
   t_stat: ['t-statistic', 'Mean Rank IC divided by its standard error. Around 2 or more is conventionally significant for a single test.'],
+  ic_ci: ['95% interval', 'Range of mean Rank IC from a circular block bootstrap: 2,000 resamples of three-month blocks, which keeps neighbouring months together. It is for one model on its own; the Holm p-value is the one that allows for comparing several. An interval that includes zero means the data cannot rule out no skill.'],
   holm: ['Holm-adjusted p-value', 'The p-value corrected for comparing several models, since the best of many looks better than it is. Below 0.05 is conventionally significant.'],
   spread: ['Q1 − Q5 spread', 'Average sector-relative return of the top-scored fifth minus the bottom fifth over the next 20 sessions.'],
   sharpe: ['Sharpe ratio', 'Annualised return divided by annualised volatility, from monthly returns. Net means after trading costs.'],

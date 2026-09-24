@@ -7,6 +7,10 @@ import { consensusCell, pctBar, rankChange, statusBadge, tickerLink } from './pa
 import { bindStars, starButton, watchlist } from '../watchlist.js';
 
 /** The research read-out as short labelled points: [label, text]. */
+const ciText = (summary) => (Number.isFinite(summary.ic_ci_low)
+  ? ` Bootstrap 95% interval for the IC: ${num(summary.ic_ci_low, 3)} to ${num(summary.ic_ci_high, 3)}.`
+  : '');
+
 export function verdict(index, model) {
   const leader = leadingModel(index);
   const best = index.summaries[leader];
@@ -17,8 +21,8 @@ export function verdict(index, model) {
   points.push(['Signal', `${index.labels[leader]} ranks best: mean Rank IC ${num(best.mean_rank_ic, 3)}, positive in ${pct(best.positive_ic_rate, 0)} of ${best.folds} months.`]);
   if (Number.isFinite(best.p_value_holm) && index.models.length > 1) {
     points.push(['Evidence', best.p_value_holm < 0.05
-      ? `Significant after adjusting for ${index.models.length} models (t = ${num(best.ic_t_stat, 1)}, Holm p = ${num(best.p_value_holm, 3)}).`
-      : `Suggestive, not conclusive: t = ${num(best.ic_t_stat, 1)}, but Holm p = ${num(best.p_value_holm, 2)} across ${index.models.length} models.${ensemble && leader !== 'ensemble' ? ` The ensemble fixed in advance reaches IC ${num(ensemble.mean_rank_ic, 3)}.` : ''}`]);
+      ? `Significant after adjusting for ${index.models.length} models (t = ${num(best.ic_t_stat, 1)}, Holm p = ${num(best.p_value_holm, 3)}).${ciText(best)}`
+      : `Suggestive, not conclusive: t = ${num(best.ic_t_stat, 1)}, but Holm p = ${num(best.p_value_holm, 2)} across ${index.models.length} models.${ciText(best)}${ensemble && leader !== 'ensemble' ? ` The ensemble fixed in advance reaches IC ${num(ensemble.mean_rank_ic, 3)}.` : ''}`]);
   }
   if (baseline && leader !== 'momentum') {
     points.push(['After costs', `Net Sharpe ${num(best.net_sharpe, 2)} against ${num(baseline.net_sharpe, 2)} for momentum and ${num(best.benchmark_sharpe, 2)} for the universe, at ${pct(best.mean_turnover, 0)} monthly turnover.`]);
@@ -55,7 +59,7 @@ export default {
     ctx.el.innerHTML = html`
       <div class="kpis">
         <div class="kpi"><div class="label">Signal date</div><div class="value">${date(index.ws.signal_date)}</div><div class="sub">Last evaluated rebalance ${date(index.ws.last_rebalance)}</div></div>
-        <div class="kpi"><div class="label">${raw(term('rank_ic', 'Mean Rank IC'))}</div><div class="value">${num(summary.mean_rank_ic, 3)}</div><div class="sub">t = ${num(summary.ic_t_stat, 2)} · ${pct(summary.positive_ic_rate, 0)} positive months</div></div>
+        <div class="kpi"><div class="label">${raw(term('rank_ic', 'Mean Rank IC'))}</div><div class="value">${num(summary.mean_rank_ic, 3)}</div><div class="sub">${Number.isFinite(summary.ic_ci_low) ? `95% interval ${num(summary.ic_ci_low, 3)} to ${num(summary.ic_ci_high, 3)}` : `t = ${num(summary.ic_t_stat, 2)}`} · ${pct(summary.positive_ic_rate, 0)} positive months</div></div>
         <div class="kpi"><div class="label">${raw(term('sharpe', 'Net Sharpe'))}</div><div class="value">${num(summary.net_sharpe, 2)}</div><div class="sub">Benchmark ${num(summary.benchmark_sharpe, 2)} · IR ${num(summary.information_ratio, 2)}</div></div>
         <div class="kpi"><div class="label">Annualized, net</div><div class="value ${toneClass(summary.annualized_net_return - summary.annualized_benchmark_return)}">${pct(summary.annualized_net_return)}</div><div class="sub">Benchmark ${pct(summary.annualized_benchmark_return)}</div></div>
         <div class="kpi"><div class="label">${raw(term('health'))}</div><div class="value">${raw(statusBadge(health.status))}</div><div class="sub">Recent IC ${num(health.recent_mean_rank_ic, 3)} over ${health.window_folds} folds</div></div>

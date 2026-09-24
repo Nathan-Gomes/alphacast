@@ -22,6 +22,29 @@ def ratio(numerator: float, denominator: float) -> float:
     return float(numerator / denominator) if denominator > 0 else 0.0
 
 
+def block_bootstrap_interval(
+    values: pd.Series, *, block: int = 3, resamples: int = 2000, level: float = 0.95, seed: int = 17
+) -> tuple[float, float]:
+    """Circular block bootstrap interval for a mean of monthly values.
+
+    Resampling blocks of consecutive months, not single months, keeps short-run
+    dependence between neighbouring folds inside each draw. Blocks wrap around the end
+    of the sample so every month is drawn equally often; a plain moving-block bootstrap
+    under-samples the first and last months and shifts the interval.
+    """
+    data = values.dropna().to_numpy()
+    count = len(data)
+    if count < 2 * block:
+        return (np.nan, np.nan)
+    rng = np.random.default_rng(seed)
+    blocks_needed = int(np.ceil(count / block))
+    starts = rng.integers(0, count, size=(resamples, blocks_needed))
+    index = ((starts[:, :, None] + np.arange(block)) % count).reshape(resamples, -1)[:, :count]
+    means = data[index].mean(axis=1)
+    tail = (1 - level) / 2
+    return (float(np.quantile(means, tail)), float(np.quantile(means, 1 - tail)))
+
+
 def market_exposure(returns: pd.Series, benchmark: pd.Series) -> dict[str, float]:
     """OLS of monthly returns on the benchmark: beta, annualised alpha and its t-stat.
 
@@ -57,6 +80,7 @@ def model_summary(model: str, periods: pd.DataFrame) -> dict[str, object]:
         "ic_information_ratio": ratio(ic.mean(), ic.std(ddof=1)),
         "ic_t_stat": ratio(ic.mean(), ic.std(ddof=1) / np.sqrt(len(ic))),
         "positive_ic_rate": float((ic > 0).mean()),
+        **dict(zip(("ic_ci_low", "ic_ci_high"), block_bootstrap_interval(ic))),
         "mean_q1_q5_spread": float(periods.q1_q5_spread.mean()),
         "monotonic_rate": float(
             (periods[[f"q{group}_return" for group in range(1, 6)]].diff(axis=1).iloc[:, 1:] < 0)

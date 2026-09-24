@@ -26,6 +26,8 @@ alphacast = "alphacast.cli:main"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+# Starlette's test client warns about its own httpx dependency; nothing in AlphaCast to change.
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]
 
 [tool.ruff]
 line-length = 100

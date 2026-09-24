@@ -86,3 +86,21 @@ def test_nominal_growth_in_dollar_volume_is_not_reported_as_drift():
     drift = feature_drift(build_panel(prices)).set_index("feature")
     assert drift.at["dollar_volume_20", "psi"] < 0.1
     assert drift.at["dollar_volume_20", "relative_to_date_median"]
+
+
+def test_block_bootstrap_interval_brackets_the_mean_and_widens_with_noise():
+    import numpy as np
+    import pandas as pd
+
+    from alphacast.diagnostics import block_bootstrap_interval
+
+    rng = np.random.default_rng(3)
+    calm = pd.Series(0.03 + rng.normal(0, 0.05, 120))
+    noisy = pd.Series(0.03 + rng.normal(0, 0.15, 120))
+    low, high = block_bootstrap_interval(calm)
+    assert low < calm.mean() < high
+    noisy_low, noisy_high = block_bootstrap_interval(noisy)
+    assert noisy_high - noisy_low > 2 * (high - low)
+    # Deterministic for a fixed seed, and undefined for too few months.
+    assert block_bootstrap_interval(calm) == (low, high)
+    assert np.isnan(block_bootstrap_interval(calm.head(5))[0])

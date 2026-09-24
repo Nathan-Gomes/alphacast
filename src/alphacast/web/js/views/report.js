@@ -53,7 +53,7 @@ export default {
         </section>
 
         <section class="report-section report-figures">
-          <div class="report-kpi"><span>Mean Rank IC</span><b>${num(summary.mean_rank_ic, 3)}</b><small>t = ${num(summary.ic_t_stat, 2)} · Holm p = ${num(summary.p_value_holm, 2)}</small></div>
+          <div class="report-kpi"><span>Mean Rank IC</span><b>${num(summary.mean_rank_ic, 3)}</b><small>95% interval ${num(summary.ic_ci_low, 3)} to ${num(summary.ic_ci_high, 3)} · Holm p = ${num(summary.p_value_holm, 2)}</small></div>
           <div class="report-kpi"><span>Net Sharpe</span><b>${num(summary.net_sharpe, 2)}</b><small>Universe ${num(summary.benchmark_sharpe, 2)}</small></div>
           <div class="report-kpi"><span>Annualised, net</span><b>${pct(summary.annualized_net_return)}</b><small>Universe ${pct(summary.annualized_benchmark_return)}</small></div>
           <div class="report-kpi"><span>Beta · alpha a year</span><b>${num(summary.beta, 2)} · ${pct(summary.alpha_annualized, 1)}</b><small>Alpha t = ${num(summary.alpha_t_stat, 1)}</small></div>
