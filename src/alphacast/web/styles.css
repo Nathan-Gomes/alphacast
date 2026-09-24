@@ -459,3 +459,4 @@ details.advanced[open] { padding-bottom: 12px; }
 .skeleton-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
 .skeleton-panel { height: 420px; }
 @media (max-width: 900px) { .skeleton-grid { grid-template-columns: minmax(0, 1fr); } }
+.button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }

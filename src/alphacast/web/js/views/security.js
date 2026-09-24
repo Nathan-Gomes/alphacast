@@ -17,6 +17,7 @@ function featureValue(feature, value) {
 }
 
 let lastTicker = null;
+let logPrice = false;
 
 export default {
   title: 'Security',
@@ -53,7 +54,7 @@ export default {
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${live.in_portfolio ? 'Held' : 'Not held'}</div><div class="sub">${live.in_portfolio ? `${pct(live.weight, 1)} weight${live.was_held ? '' : ' · entering'}` : live.was_held ? 'Exiting at this signal' : `Top ${index.ws.config.top_n} are held`}</div></div>
       </div>
       <div class="grid cols-2">
-        ${raw(panel({ title: 'Price', note: 'Weekly adjusted close.', body: '<div id="price"></div><p class="note" id="price-note"></p>' }))}
+        ${raw(panel({ title: 'Price', note: 'Weekly adjusted close.', actions: `<button class="button small" id="price-log" type="button" aria-pressed="${logPrice}">Log scale</button>`, body: '<div id="price"></div><p class="note" id="price-note"></p>' }))}
         ${raw(panel({ title: 'Why it ranks here', note: 'Score change when each feature is set to today\'s cross-sectional median. Positive pushes the rank up.', body: '<div id="attribution"><div class="skeleton" style="height:220px"></div></div>' }))}
       </div>
       <div class="grid cols-2 section-gap">
@@ -131,11 +132,21 @@ export default {
     document.getElementById('price-note').textContent = heldMonths
       ? `Shaded: the ${heldMonths} month${heldMonths === 1 ? '' : 's'} ${index.labels[model]} held ${ticker} in its top ${index.ws.config.top_n}.`
       : `${index.labels[model]} never held ${ticker} in the walk-forward test.`;
-    lineChart(document.getElementById('price'), {
-      dates: detail.prices.dates, regions,
-      series: [{ label: ticker, color: 'var(--series-1)', values: detail.prices.close, area: true }],
-      height: 250, yFormat: (value) => `$${value >= 1000 ? value.toFixed(0) : value.toFixed(value >= 100 ? 0 : 2)}`,
-      tooltipFormat: (value) => money(value), label: `${ticker} weekly adjusted close`,
+    const drawPrice = () => {
+      const values = logPrice ? detail.prices.close.map((value) => Math.log10(value)) : detail.prices.close;
+      const unlog = (value) => (logPrice ? 10 ** value : value);
+      lineChart(document.getElementById('price'), {
+        dates: detail.prices.dates, regions,
+        series: [{ label: ticker, color: 'var(--series-1)', values, area: !logPrice }],
+        height: 250, yFormat: (value) => { const v = unlog(value); return `$${v >= 1000 ? v.toFixed(0) : v.toFixed(v >= 100 ? 0 : 2)}`; },
+        tooltipFormat: (value) => money(unlog(value)), label: `${ticker} weekly adjusted close${logPrice ? ', log scale' : ''}`,
+      });
+    };
+    drawPrice();
+    document.getElementById('price-log').addEventListener('click', (event) => {
+      logPrice = !logPrice;
+      event.currentTarget.setAttribute('aria-pressed', String(logPrice));
+      drawPrice();
     });
 
     const attribution = [...(detail.attribution[model] || [])].sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
