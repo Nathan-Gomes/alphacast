@@ -89,7 +89,7 @@ For the linear models this is exactly coefficient times centred rank. For the tr
 
 - **Model health:** the mean Rank IC of the last six folds against the full sample. **Degraded** if the recent mean is negative; **watch** if it sits more than one standard error (full-sample IC s.d. / sqrt(6)) below the full-sample mean; otherwise **healthy**.
 - **Reliance drift:** the share of attribution per feature over the last six folds against the full history.
-- **Feature drift:** population stability index of raw feature values, last 63 sessions against all earlier history, using deciles of the reference. Under 0.10 stable, 0.10 to 0.25 moderate, above 0.25 shifted. Models see within-date ranks, so raw drift does not reach them directly, but it signals a market unlike most of the training data.
+- **Feature drift:** population stability index of feature values (dollar volume is taken relative to each day's median, since its nominal level grows with prices), last 63 sessions against all earlier history, using deciles of the reference. Under 0.10 stable, 0.10 to 0.25 moderate, above 0.25 shifted. Models see within-date ranks, so raw drift does not reach them directly, but it signals a market unlike most of the training data.
 
 ## Interpretation
 
