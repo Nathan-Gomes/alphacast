@@ -73,7 +73,8 @@ python -m venv .venv
 Open `http://127.0.0.1:8000`. The default workspace loads from `src/alphacast/snapshots/default_run.json.gz`. The API reference is at `/api/docs`.
 
 ```bash
-.venv/bin/python -m pytest                      # test suite
+.venv/bin/python -m pytest                      # Python test suite
+node --test tests/js/*.test.mjs                 # interface logic tests
 .venv/bin/python scripts/build_default_run.py   # rebuild the default workspace (~80 s)
 .venv/bin/python scripts/refresh_snapshot.py    # re-download the frozen price snapshot
 .venv/bin/alphacast --source snapshot --output output/run.json   # CLI run
