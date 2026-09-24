@@ -1,8 +1,8 @@
 import { legend, lineChart } from '../charts.js';
-import { BENCH_COLOR, leadingModel, liveRows, modelColor } from '../data.js';
+import { BENCH_COLOR, leadingModel, liveRows, modelColor, votingModels } from '../data.js';
 import { cumulative, date, html, num, pct, raw, sectorShort, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
-import { pctBar, rankChange, statusBadge, tickerLink } from './parts.js';
+import { consensusCell, pctBar, rankChange, statusBadge, tickerLink } from './parts.js';
 import { bindStars, starButton, watchlist } from '../watchlist.js';
 
 function verdict(index, model) {
@@ -75,6 +75,10 @@ export default {
             <div class="panel-body"><div id="legend"></div><div id="equity"></div></div>
           </section>
           <section class="panel">
+            <div class="panel-head"><div><h2>Consensus picks</h2><p>Stocks most models place in their top quintile today.</p></div></div>
+            <div class="panel-body flush table-wrap" id="consensus-table"></div>
+          </section>
+          <section class="panel">
             <div class="panel-head"><div><h2>Model leaderboard</h2><p>Select a row to make it the active model.</p></div></div>
             <div class="panel-body flush table-wrap" id="leaderboard"></div>
           </section>
@@ -91,6 +95,18 @@ export default {
     const open = (row) => ctx.navigate(`#/security/${row.ticker}`);
     dataTable(document.getElementById('top-table'), { columns: rankColumns, rows: rows.slice(0, 10), onRowClick: open });
     dataTable(document.getElementById('bottom-table'), { columns: rankColumns, rows: rows.slice(-5).reverse(), onRowClick: open });
+    const picks = rows.filter((row) => row.consensus >= Math.max(2, Math.ceil(votingModels(index).length / 2)))
+      .sort((a, b) => b.consensus - a.consensus || a.rank - b.rank).slice(0, 8);
+    dataTable(document.getElementById('consensus-table'), {
+      rows: picks, onRowClick: open, empty: 'No stock is in the top quintile of most models today.',
+      columns: [
+        { key: 'ticker', label: 'Ticker', sortable: false, render: (row) => tickerLink(row.ticker) },
+        { key: 'sector', label: 'Sector', sortable: false, render: (row) => html`<span class="sector">${sectorShort(row.sector)}</span>` },
+        { key: 'consensus', label: 'Models', num: true, sortable: false, render: (row) => consensusCell(row.consensus, votingModels(index).length) },
+        { key: 'rank', label: `Rank`, num: true, sortable: false },
+      ],
+    });
+
     const renderWatch = () => {
       const starred = new Set(watchlist.all());
       const watched = rows.filter((row) => starred.has(row.ticker));

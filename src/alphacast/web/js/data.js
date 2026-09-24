@@ -41,10 +41,13 @@ export function leadingModel(index) {
   return [...index.models].sort((a, b) => index.summaries[b].mean_rank_ic - index.summaries[a].mean_rank_ic)[0];
 }
 
-/** How many models put each ticker in their top quintile today. */
+/** Models that vote in consensus: the ensemble is derived from the others, so it would double-count. */
+export const votingModels = (index) => index.models.filter((model) => model !== 'ensemble');
+
+/** How many voting models put each ticker in their top quintile today. */
 export function consensus(index) {
   const counts = {};
-  index.models.forEach((model) => (index.live[model] || []).forEach((row) => {
+  votingModels(index).forEach((model) => (index.live[model] || []).forEach((row) => {
     counts[row.ticker] = (counts[row.ticker] || 0) + (row.quintile === 1 ? 1 : 0);
   }));
   return counts;

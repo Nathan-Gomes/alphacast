@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { consensus, leadingModel, rankAgreement } from '../../src/alphacast/web/js/data.js';
+import { consensus, leadingModel, rankAgreement, votingModels } from '../../src/alphacast/web/js/data.js';
 
 const live = (ranks) => ranks.map(([ticker, rank, quintile]) => ({ ticker, rank, quintile }));
 const index = {
@@ -25,4 +25,10 @@ test('consensus counts top-quintile placements across models', () => {
 
 test('the leading model has the highest mean rank IC', () => {
   assert.equal(leadingModel(index), 'b');
+});
+
+test('the ensemble does not vote in consensus', () => {
+  const withEnsemble = { ...index, models: [...index.models, 'ensemble'], live: { ...index.live, ensemble: live([['X', 1, 1], ['Y', 2, 2], ['Z', 3, 5]]) } };
+  assert.deepEqual(votingModels(withEnsemble), ['a', 'b', 'c']);
+  assert.deepEqual(consensus(withEnsemble), { X: 2, Y: 0, Z: 1 });
 });
