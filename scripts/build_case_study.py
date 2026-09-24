@@ -279,6 +279,7 @@ def main(output: Path) -> None:
     quarterly = _random_forest_variant(ws["config"]["end"], rebalance_every_folds=3)
     buffered = _random_forest_variant(ws["config"]["end"], hold_buffer=23)
     capped = _random_forest_variant(ws["config"]["end"], max_per_sector=2)
+    neutral = _random_forest_variant(ws["config"]["end"], neutralize_volatility=True)
     tests = _test_count()
 
     template = (ROOT / "scripts" / "case_study_template.html").read_text()
@@ -332,6 +333,9 @@ def main(output: Path) -> None:
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
         rf_beta=f"{rf['beta']:.2f}",
+        n_ic=f"{neutral['mean_rank_ic']:.3f}",
+        n_beta=f"{neutral['beta']:.2f}",
+        n_alpha=pct(neutral["alpha_annualized"], 1),
         rf_alpha=pct(rf["alpha_annualized"], 1),
         rf_alpha_t=f"{rf['alpha_t_stat']:.1f}",
         mom_beta=f"{mom['beta']:.2f}",
