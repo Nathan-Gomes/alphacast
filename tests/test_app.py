@@ -84,3 +84,11 @@ def test_the_run_queue_refuses_work_beyond_its_limit(monkeypatch):
     response = client.post("/api/runs", json={"source": "synthetic", "models": ["momentum"]})
     assert response.status_code == 429
     assert "queued or running" in response.json()["detail"]
+
+
+def test_the_page_is_served_with_a_hash_based_content_security_policy():
+    response = client.get("/")
+    policy = response.headers["content-security-policy"]
+    assert "script-src 'self' 'sha256-" in policy and "unsafe-inline" not in policy.split("script-src")[1].split(";")[0]
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert "content-security-policy" not in client.get("/api/docs").headers

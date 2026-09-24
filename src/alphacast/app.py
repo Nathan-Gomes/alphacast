@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 import re
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -57,6 +59,41 @@ class RunPayload(BaseModel):
 
 
 app = FastAPI(title="AlphaCast", version=__version__, docs_url="/api/docs", redoc_url=None)
+
+
+def _content_security_policy() -> str:
+    """Allow the page's own inline theme script by hash, and nothing else inline."""
+    html = (WEB_DIRECTORY / "index.html").read_text(encoding="utf-8")
+    hashes = " ".join(
+        "'sha256-" + base64.b64encode(hashlib.sha256(script.encode()).digest()).decode() + "'"
+        for script in re.findall(r"<script>(.*?)</script>", html, re.DOTALL)
+    )
+    return "; ".join(
+        [
+            "default-src 'self'",
+            f"script-src 'self' {hashes}",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src https://fonts.gstatic.com",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+        ]
+    )
+
+
+CONTENT_SECURITY_POLICY = _content_security_policy()
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if request.url.path == "/":
+        response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+    return response
 app.mount("/assets", StaticFiles(directory=WEB_DIRECTORY), name="assets")
 registry = RunRegistry()
 
