@@ -46,6 +46,7 @@ export default {
         ${raw(panel({ title: 'Rolling 12-month active return', note: 'Compounded net return minus the equal-weight universe.', body: '<div id="active"></div>' }))}
       </div>
       <div class="section-gap">${raw(panel({ title: 'Cost sensitivity', note: 'Net results rebuilt from gross returns and turnover at any one-way trading cost. The benchmark is untraded.', actions: '<label class="field compact"><span>Cost</span><input id="cost-slider" type="range" min="0" max="100" step="1" aria-label="One-way cost in basis points"><output id="cost-value" class="mono" style="min-width:56px;text-align:right"></output></label>', body: '<div class="grid cols-main"><div><div id="cost-legend"></div><div id="cost-chart"></div></div><div id="cost-readout"></div></div>' }))}</div>
+      <div class="section-gap">${raw(panel({ title: 'Rolling 24-month beta', note: 'Regression of the sleeve\'s monthly net returns on the universe over the trailing two years. Above 1 means the sleeve amplified market moves in that window.', body: '<div id="beta-legend"></div><div id="beta"></div>' }))}</div>
       <div class="section-gap">${raw(panel({ title: 'Calendar-year returns', note: 'Monthly net returns compounded within each calendar year. Partial first and last years are marked.', body: '<div id="years-chart"></div><div class="table-wrap section-gap" id="years"></div>' }))}</div>
       <div class="grid cols-2 section-gap">
         ${raw(panel({ title: 'Turnover by rebalance', note: 'One-way share of the book traded. The first period is the starting allocation.', body: '<div id="turnover"></div>' }))}
@@ -125,6 +126,29 @@ export default {
     slider.value = String(chosenCost ?? index.ws.config.transaction_cost_bps);
     slider.addEventListener('input', update);
     update();
+
+    // Rolling OLS beta over the trailing 24 months.
+    const window24 = 24;
+    const rollingBeta = periods.map((_, i) => {
+      if (i + 1 < window24) return NaN;
+      const y = periods.slice(i + 1 - window24, i + 1).map((row) => row.net_return);
+      const x = periods.slice(i + 1 - window24, i + 1).map((row) => row.benchmark_return);
+      const mx = mean(x);
+      const my = mean(y);
+      const cov = x.reduce((sum, xi, j) => sum + (xi - mx) * (y[j] - my), 0);
+      const varx = x.reduce((sum, xi) => sum + (xi - mx) ** 2, 0);
+      return varx > 0 ? cov / varx : NaN;
+    });
+    const betaSeries = [
+      { label: 'Rolling beta', color, values: rollingBeta },
+      { label: 'Full-period beta', color: BENCH_COLOR, values: periods.map(() => s.beta), dash: true },
+    ];
+    document.getElementById('beta-legend').innerHTML = legend(betaSeries);
+    lineChart(document.getElementById('beta'), {
+      dates: periods.map((row) => row.date), series: betaSeries, height: 220, baseline: 1,
+      yFormat: (value) => value.toFixed(1), tooltipFormat: (value) => value.toFixed(2),
+      label: 'Rolling 24-month beta of the sleeve to the equal-weight universe',
+    });
 
     const byYear = new Map();
     periods.forEach((row) => {
