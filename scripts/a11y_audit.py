@@ -22,7 +22,7 @@ import websocket
 
 VIEWS = [
     "overview", "screener", "security/NVDA", "portfolio", "backtest",
-    "models", "diagnostics", "monitoring", "runs",
+    "models", "diagnostics", "monitoring", "report", "runs",
 ]
 CHROME_CANDIDATES = [
     os.environ.get("CHROME", ""),

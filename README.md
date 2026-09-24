@@ -52,6 +52,7 @@ Three things, in one repository.
 | **Models** | All models on identical folds: IC, t-stat, Holm-adjusted p-value, Sharpe, turnover, cumulative IC, today's rank agreement, feature reliance, declared specifications |
 | **Diagnostics** | Monthly Rank IC, quintile returns, IC distribution, signal decay across horizons, within-sector skill and tilt, regime breakdown |
 | **Monitoring** | Health status per model (recent IC tested against the earlier record in standard errors), rolling IC against a historical band, reliance drift, feature drift (PSI) |
+| **Report** | One-page research memo for the active model: bottom line, key figures, growth, every model on the same folds, current book, setup and limits; prints to a two-page PDF |
 | **Runs** | Background studies (frozen snapshot, live Yahoo Finance, or synthetic) with time estimates and portfolio rules (rebalance cadence, holding buffer, sector cap); headline results, side-by-side run comparison, JSON export |
 
 Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> or <kbd>/</kbd> anywhere to jump to a ticker, view or model. Links keep the active model and run, charts can be read with the arrow keys, and dotted-underlined metrics explain themselves on hover or focus.

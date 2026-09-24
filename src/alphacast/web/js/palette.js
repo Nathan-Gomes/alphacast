@@ -10,6 +10,7 @@ const VIEWS = [
   ['models', 'Models', 'Compare all models'],
   ['diagnostics', 'Diagnostics', 'IC, quintiles, sectors, regimes'],
   ['monitoring', 'Monitoring', 'Health, reliance and feature drift'],
+  ['report', 'Report', 'One-page research memo to print or share'],
   ['runs', 'Runs', 'Start a new study'],
 ];
 

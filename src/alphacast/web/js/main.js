@@ -14,9 +14,10 @@ import backtest from './views/backtest.js';
 import models from './views/models.js';
 import diagnostics from './views/diagnostics.js';
 import monitoring from './views/monitoring.js';
+import report from './views/report.js';
 import runs from './views/runs.js';
 
-const VIEWS = { overview, screener, security, portfolio, backtest, models, diagnostics, monitoring, runs };
+const VIEWS = { overview, screener, security, portfolio, backtest, models, diagnostics, monitoring, report, runs };
 const $ = (id) => document.getElementById(id);
 
 const storage = {
@@ -104,6 +105,17 @@ function renderContext() {
     bar.insertAdjacentHTML('beforeend', html`<span class="sep"></span><span class="neg" title="Yahoo Finance returned no prices for: ${unavailable.join(', ')}">${unavailable.length} ticker${unavailable.length === 1 ? '' : 's'} unavailable</span>`);
   }
 }
+
+// Print in the light palette whatever the screen theme, then restore it.
+let themeBeforePrint = null;
+window.addEventListener('beforeprint', () => {
+  themeBeforePrint = document.documentElement.dataset.theme || null;
+  document.documentElement.dataset.theme = 'light';
+});
+window.addEventListener('afterprint', () => {
+  if (themeBeforePrint) document.documentElement.dataset.theme = themeBeforePrint;
+  else delete document.documentElement.dataset.theme;
+});
 
 let renderToken = 0;
 async function render() {

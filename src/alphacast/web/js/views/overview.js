@@ -7,7 +7,7 @@ import { consensusCell, pctBar, rankChange, statusBadge, tickerLink } from './pa
 import { bindStars, starButton, watchlist } from '../watchlist.js';
 
 /** The research read-out as short labelled points: [label, text]. */
-function verdict(index, model) {
+export function verdict(index, model) {
   const leader = leadingModel(index);
   const best = index.summaries[leader];
   const baseline = index.summaries.momentum;
