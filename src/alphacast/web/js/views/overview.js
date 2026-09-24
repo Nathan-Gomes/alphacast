@@ -3,6 +3,7 @@ import { BENCH_COLOR, leadingModel, liveRows, modelColor } from '../data.js';
 import { cumulative, date, html, num, pct, raw, sectorShort, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
 import { pctBar, rankChange, statusBadge, tickerLink } from './parts.js';
+import { bindStars, starButton, watchlist } from '../watchlist.js';
 
 function verdict(index, model) {
   const leader = leadingModel(index);
@@ -55,6 +56,10 @@ export default {
             <div class="panel-head"><div><h2>Highest ranked now</h2><p>Scores from the ${date(index.ws.signal_date)} close. Outcomes are unknown until the next 20 sessions pass.</p></div><div class="actions"><a class="button small" href="#/screener">Open screener</a></div></div>
             <div class="panel-body flush table-wrap" id="top-table"></div>
           </section>
+          <section class="panel" id="watch-panel" hidden>
+            <div class="panel-head"><div><h2>Watchlist</h2><p>Your starred tickers under the active model. Stored in this browser.</p></div><div class="actions"><a class="button small" href="#/screener">Manage</a></div></div>
+            <div class="panel-body flush table-wrap" id="watch-table"></div>
+          </section>
           <section class="panel">
             <div class="panel-head"><div><h2>Lowest ranked now</h2><p>The bottom quintile: names the model expects to lag their sector.</p></div></div>
             <div class="panel-body flush table-wrap" id="bottom-table"></div>
@@ -82,6 +87,18 @@ export default {
     const open = (row) => ctx.navigate(`#/security/${row.ticker}`);
     dataTable(document.getElementById('top-table'), { columns: rankColumns, rows: rows.slice(0, 10), onRowClick: open });
     dataTable(document.getElementById('bottom-table'), { columns: rankColumns, rows: rows.slice(-5).reverse(), onRowClick: open });
+    const renderWatch = () => {
+      const starred = new Set(watchlist.all());
+      const watched = rows.filter((row) => starred.has(row.ticker));
+      document.getElementById('watch-panel').hidden = !watched.length;
+      if (!watched.length) return;
+      dataTable(document.getElementById('watch-table'), {
+        columns: [{ key: 'star', label: '', sortable: false, render: (row) => starButton(row.ticker) }, ...rankColumns],
+        rows: watched, sortKey: 'rank', sortDir: 'asc', onRowClick: open,
+        afterRender: (element) => bindStars(element, renderWatch),
+      });
+    };
+    renderWatch();
 
     const periods = index.periods[model];
     const dates = [periods[0].train_end, ...periods.map((row) => row.date)];

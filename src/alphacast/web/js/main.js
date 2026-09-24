@@ -42,9 +42,23 @@ export function toast(message, timeout = 4200) {
 }
 
 function parseRoute() {
-  const [path] = location.hash.replace(/^#\/?/, '').split('?');
+  const [path, search = ''] = location.hash.replace(/^#\/?/, '').split('?');
   const [view, ...params] = path.split('/').filter(Boolean);
-  return { view: VIEWS[view] ? view : 'overview', params: params.map(decodeURIComponent) };
+  return {
+    view: VIEWS[view] ? view : 'overview',
+    params: params.map(decodeURIComponent),
+    query: Object.fromEntries(new URLSearchParams(search)),
+  };
+}
+
+/** Keep the model and run in the address so a copied link opens the same view. */
+function syncAddress() {
+  if (!state.index) return;
+  const [path] = location.hash.replace(/^#\/?/, '').split('?');
+  const query = new URLSearchParams({ model: state.model });
+  if (state.runId !== 'default') query.set('run', state.runId);
+  const next = `#/${path || 'overview'}?${query}`;
+  if (location.hash !== next) history.replaceState(null, '', next);
 }
 
 export function navigate(hash) {
@@ -126,6 +140,7 @@ async function render() {
   }
   try {
     await view.render(ctx);
+    syncAddress();
   } catch (error) {
     if (token !== renderToken) return;
     console.error(error);
@@ -236,6 +251,9 @@ function bindShell() {
 }
 
 async function boot() {
+  const { query } = parseRoute();
+  if (query.run) state.runId = query.run;
+  if (query.model) state.model = query.model;
   bindShell();
   render();
   try {

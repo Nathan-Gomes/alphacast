@@ -375,3 +375,11 @@ tr.selected td { background: var(--accent-soft); }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 input[type="range"] { accent-color: var(--accent); width: 160px; }
+.star { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; vertical-align: middle; }
+.star svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.star:hover { color: var(--ink); background: var(--hover); }
+.star.on { color: var(--warning); }
+.star.on svg { fill: currentColor; }
+:root[data-theme="light"] .star.on { color: #b27700; }
+.sec-head h2 .star { width: 28px; height: 28px; margin-left: 4px; }
+.sec-head h2 .star svg { width: 18px; height: 18px; }

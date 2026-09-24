@@ -4,6 +4,7 @@ import { liveRows, modelColor } from '../data.js';
 import { html, isNum, mean, money, num, pct, raw, toneClass } from '../format.js';
 import { dataTable } from '../table.js';
 import { heatCell, panel } from './parts.js';
+import { bindStars, starButton } from '../watchlist.js';
 
 const PERCENT_FEATURES = new Set(['return_21', 'return_63', 'return_126', 'momentum_12_1', 'volatility_20', 'volatility_60', 'downside_volatility_60', 'drawdown_252', 'distance_high_252', 'ma_ratio_50_200', 'volume_ratio_20', 'market_relative_63', 'sector_relative_63']);
 
@@ -34,7 +35,7 @@ export default {
 
     ctx.el.innerHTML = html`
       <div class="sec-head">
-        <div><h2>${ticker}</h2><div class="meta">${profile.sector}</div></div>
+        <div><h2>${ticker} ${raw(starButton(ticker))}</h2><div class="meta">${profile.sector}</div></div>
         <div><div class="price">${money(profile.price)}</div><div class="${toneClass(profile.return_1d)}">${pct(profile.return_1d, 2, { sign: true })} on the day</div></div>
         <label class="field picker"><span>Jump to security</span>
           <input id="picker" type="text" list="tickers" autocomplete="off" spellcheck="false" placeholder="Ticker" aria-label="Jump to ticker">
@@ -60,6 +61,7 @@ export default {
       </div>
       <div class="section-gap">${raw(panel({ title: 'Feature values', note: 'Raw trailing inputs at the signal date and where they sit in the universe.', body: '<div class="table-wrap" id="features"></div>', flush: false }))}</div>`;
 
+    bindStars(ctx.el.querySelector('.sec-head'));
     const picker = document.getElementById('picker');
     picker.addEventListener('change', () => {
       const value = picker.value.trim().toUpperCase();

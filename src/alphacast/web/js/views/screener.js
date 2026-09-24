@@ -2,9 +2,10 @@ import { liveRows } from '../data.js';
 import { downloadFile, html, pct, sectorShort, toCsv, toneClass, num, raw } from '../format.js';
 import { dataTable } from '../table.js';
 import { heatCell, pctBar, rankChange, tickerLink } from './parts.js';
+import { bindStars, starButton, watchlist } from '../watchlist.js';
 
 // Filters survive re-renders (model switch, resize) for the session.
-const filters = { query: '', sector: '', quintile: '', portfolio: false };
+const filters = { query: '', sector: '', quintile: '', portfolio: false, watch: false };
 
 export default {
   title: 'Screener',
@@ -21,6 +22,7 @@ export default {
           <select id="sector" aria-label="Sector"><option value="">All sectors</option>${index.sectors.map((sector) => raw(html`<option value="${sector}" ${raw(filters.sector === sector ? 'selected' : '')}>${sector}</option>`))}</select>
           <select id="quintile" aria-label="Quintile"><option value="">All quintiles</option>${[1, 2, 3, 4, 5].map((q) => raw(`<option value="${q}" ${String(q) === filters.quintile ? 'selected' : ''}>Q${q}${q === 1 ? ' (top)' : q === 5 ? ' (bottom)' : ''}</option>`))}</select>
           <label class="check"><input type="checkbox" id="portfolio" ${raw(filters.portfolio ? 'checked' : '')}> In portfolio</label>
+          <label class="check"><input type="checkbox" id="watch" ${raw(filters.watch ? 'checked' : '')}> Watchlist</label>
           <span class="spacer"></span>
           <span class="count" id="count"></span>
           <button class="button small" id="csv" type="button">Export CSV</button>
@@ -30,6 +32,7 @@ export default {
       <p class="note">Score percentile ranks the model output within today's cross-section (100 = most attractive). Factor columns are descriptive percentiles: momentum (6M, 12-1, 50/200 MA), relative strength (3M vs market and sector), low risk (inverse volatility and drawdown), liquidity (20-day dollar volume). They describe a profile; they are not the model's weights.${hasPrediction ? ' Model output is the predicted 20-session return relative to the sector, most useful as an ordering.' : ''}</p>`;
 
     const columns = [
+      { key: 'star', label: '', sortable: false, render: (row) => starButton(row.ticker) },
       { key: 'rank', label: 'Rank', num: true },
       { key: 'ticker', label: 'Ticker', render: (row) => tickerLink(row.ticker) },
       { key: 'sector', label: 'Sector', render: (row) => html`<span class="sector">${sectorShort(row.sector)}</span>` },
@@ -53,6 +56,7 @@ export default {
       if (filters.sector && row.sector !== filters.sector) return false;
       if (filters.quintile && String(row.quintile) !== filters.quintile) return false;
       if (filters.portfolio && !row.in_portfolio) return false;
+      if (filters.watch && !watchlist.has(row.ticker)) return false;
       return true;
     });
 
@@ -60,7 +64,8 @@ export default {
       columns, rows: filtered(), sortKey: 'rank', sortDir: 'asc',
       onRowClick: (row) => ctx.navigate(`#/security/${row.ticker}`),
       rowClass: (row) => (row.in_portfolio ? 'held' : ''),
-      empty: 'No securities match these filters.',
+      afterRender: (element) => bindStars(element, () => { if (filters.watch) refresh(); }),
+      empty: filters.watch && !watchlist.all().length ? 'Your watchlist is empty. Star a ticker to add it.' : 'No securities match these filters.',
     });
     const count = document.getElementById('count');
     const refresh = () => {
@@ -77,6 +82,7 @@ export default {
     bind('sector', 'sector');
     bind('quintile', 'quintile');
     bind('portfolio', 'portfolio', 'change', (element) => element.checked);
+    bind('watch', 'watch', 'change', (element) => element.checked);
     document.getElementById('csv').addEventListener('click', () => {
       const exportColumns = [
         { key: 'rank', label: 'rank' }, { key: 'ticker', label: 'ticker' }, { key: 'sector', label: 'sector' },

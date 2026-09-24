@@ -8,7 +8,7 @@ import { escapeHtml, isNum } from './format.js';
  */
 export function dataTable(container, {
   columns, rows, sortKey = null, sortDir = 'desc', onRowClick = null, rowClass = null,
-  empty = 'No rows match.', caption = '',
+  empty = 'No rows match.', caption = '', afterRender = null,
 }) {
   const state = { rows, sortKey, sortDir };
 
@@ -60,9 +60,10 @@ export function dataTable(container, {
       container.querySelectorAll('tbody tr.clickable').forEach((tr) => {
         const row = body[Number(tr.dataset.index)];
         tr.addEventListener('click', (event) => { if (!event.target.closest('a,button')) onRowClick(row); });
-        tr.addEventListener('keydown', (event) => { if (event.key === 'Enter') onRowClick(row); });
+        tr.addEventListener('keydown', (event) => { if (event.key === 'Enter' && event.target === tr) onRowClick(row); });
       });
     }
+    if (afterRender) afterRender(container);
   }
 
   render();
