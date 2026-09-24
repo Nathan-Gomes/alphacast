@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from .features import FEATURE_COLUMNS
 
@@ -244,3 +245,24 @@ def signal_decay(
                 }
             )
     return pd.DataFrame(rows)
+
+
+def add_significance(summaries: pd.DataFrame) -> pd.DataFrame:
+    """Two-sided p-values for mean Rank IC, with a Holm adjustment across the models.
+
+    Comparing several models and reporting the best inflates its apparent
+    significance; the Holm step-down adjustment accounts for that without assuming
+    the models are independent.
+    """
+    result = summaries.copy()
+    degrees = (result.folds - 1).clip(lower=1)
+    result["p_value"] = 2 * stats.t.sf(result.ic_t_stat.abs(), degrees)
+    order = result.p_value.sort_values().index
+    count = len(order)
+    running = 0.0
+    adjusted = {}
+    for position, label in enumerate(order):
+        running = max(running, min(1.0, (count - position) * result.at[label, "p_value"]))
+        adjusted[label] = running
+    result["p_value_holm"] = pd.Series(adjusted)
+    return result

@@ -13,6 +13,7 @@ from .config import MODEL_LABELS, SUPPORTED_MODELS, ResearchConfig
 from .contracts import DataQualityReport, StudyResult
 from .data import drop_incomplete_sessions, synthetic_prices, validate_price_panel
 from .diagnostics import (
+    add_significance,
     feature_drift,
     model_summary,
     monitoring_summary,
@@ -417,6 +418,7 @@ def run_research(
         [model_summary(model, group) for model, group in period_frame.groupby("model", sort=False)]
     )
     summaries["label"] = summaries.model.map(MODEL_LABELS)
+    summaries = add_significance(summaries)
     importance_history = pd.DataFrame(importance_rows)
     average_importance = (
         importance_history.groupby(["model", "feature"], as_index=False, sort=False)

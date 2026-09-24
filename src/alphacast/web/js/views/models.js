@@ -62,6 +62,7 @@ export default {
         { key: 'label', label: 'Model', render: (row) => html`<span class="dot" style="background:${raw(modelColor(row.model))}"></span>${row.label}` },
         { key: 'mean_rank_ic', label: 'Mean IC', num: true, render: (row) => num(row.mean_rank_ic, 3) },
         { key: 'ic_t_stat', label: 'IC t-stat', num: true, render: (row) => num(row.ic_t_stat, 2) },
+        { key: 'p_value_holm', label: 'p (Holm)', num: true, title: 'Two-sided p-value for mean IC, adjusted for comparing every model in the run', render: (row) => html`<span class="${row.p_value_holm < 0.05 ? 'pos' : ''}">${num(row.p_value_holm, 3)}</span>` },
         { key: 'ic_information_ratio', label: 'IC IR', num: true, render: (row) => num(row.ic_information_ratio, 2) },
         { key: 'positive_ic_rate', label: 'IC > 0', num: true, render: (row) => pct(row.positive_ic_rate, 0) },
         { key: 'mean_q1_q5_spread', label: 'Q1 − Q5', num: true, title: 'Average monthly sector-relative spread between top and bottom quintiles', render: (row) => pct(row.mean_q1_q5_spread, 2) },

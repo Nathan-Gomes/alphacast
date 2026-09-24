@@ -1,7 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from alphacast.diagnostics import max_drawdown, monitoring_summary, population_stability
+from alphacast.diagnostics import (
+    add_significance,
+    max_drawdown,
+    monitoring_summary,
+    population_stability,
+)
 
 
 def test_population_stability_is_near_zero_for_the_same_distribution_and_large_for_a_shift():
@@ -39,3 +44,12 @@ def test_monitoring_statuses_follow_the_declared_thresholds():
 def test_max_drawdown_counts_the_start_as_a_peak():
     assert abs(max_drawdown(pd.Series([-0.1, 0.0])) - (-0.1)) < 1e-12
     assert abs(max_drawdown(pd.Series([0.1, -0.5, 0.2])) - (-0.5)) < 1e-12
+
+
+def test_holm_adjustment_multiplies_the_smallest_p_value_by_the_number_of_models():
+    summaries = pd.DataFrame({"model": list("abc"), "folds": 114, "ic_t_stat": [2.41, 1.0, 0.2]})
+    result = add_significance(summaries).set_index("model")
+    assert 0.015 < result.at["a", "p_value"] < 0.02
+    assert abs(result.at["a", "p_value_holm"] - 3 * result.at["a", "p_value"]) < 1e-12
+    assert (result.p_value_holm >= result.p_value).all()
+    assert result.p_value_holm.is_monotonic_increasing

@@ -12,8 +12,12 @@ function verdict(index, model) {
   const active = index.summaries[model];
   const health = index.monitoring[model];
   const sentences = [];
-  const significant = Math.abs(best.ic_t_stat) >= 2;
-  sentences.push(`${index.labels[leader]} has the strongest out-of-sample ranking signal: mean Rank IC ${num(best.mean_rank_ic, 3)} (t = ${num(best.ic_t_stat, 1)}), positive in ${pct(best.positive_ic_rate, 0)} of ${best.folds} months${significant ? '' : ', which is not statistically distinguishable from zero'}.`);
+  sentences.push(`${index.labels[leader]} has the strongest out-of-sample ranking signal: mean Rank IC ${num(best.mean_rank_ic, 3)} (t = ${num(best.ic_t_stat, 1)}, p = ${num(best.p_value, 3)}), positive in ${pct(best.positive_ic_rate, 0)} of ${best.folds} months.`);
+  if (Number.isFinite(best.p_value_holm) && index.models.length > 1) {
+    sentences.push(best.p_value_holm < 0.05
+      ? `That survives adjustment for comparing ${index.models.length} models (Holm p = ${num(best.p_value_holm, 3)}).`
+      : `After adjusting for comparing ${index.models.length} models, the evidence is suggestive rather than conclusive (Holm p = ${num(best.p_value_holm, 2)}).`);
+  }
   if (baseline && leader !== 'momentum') {
     const edge = best.mean_rank_ic - baseline.mean_rank_ic;
     sentences.push(edge > 0
