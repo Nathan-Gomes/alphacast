@@ -111,3 +111,32 @@ export function initPalette(getContext) {
   });
   return { open };
 }
+
+const SHORTCUTS = [
+  ['⌘K or /', 'Search tickers, views and models (Ctrl K on Windows)'],
+  ['?', 'Show this list'],
+  ['← →', 'Step through a focused chart (Shift for ten)'],
+  ['Home  End', 'Jump to the ends of a focused chart'],
+  ['Enter', 'Open the focused table row'],
+  ['Esc', 'Close dialogs and the menu'],
+];
+
+let help = null;
+
+/** "?" opens a list of keyboard shortcuts. */
+export function initShortcutHelp() {
+  document.addEventListener('keydown', (event) => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+    if (event.key !== '?' || typing || event.metaKey || event.ctrlKey) return;
+    event.preventDefault();
+    if (!help) {
+      help = document.createElement('dialog');
+      help.className = 'palette shortcuts';
+      help.setAttribute('aria-labelledby', 'shortcuts-title');
+      help.innerHTML = `<h2 id="shortcuts-title">Keyboard shortcuts</h2><dl>${SHORTCUTS.map(([keys, what]) => `<div><dt><kbd>${escapeHtml(keys)}</kbd></dt><dd>${escapeHtml(what)}</dd></div>`).join('')}</dl><p class="palette-hint"><kbd>Esc</kbd> close</p>`;
+      help.addEventListener('click', (e) => { if (e.target === help) help.close(); });
+      document.body.append(help);
+    }
+    if (help.open) help.close(); else help.showModal();
+  });
+}

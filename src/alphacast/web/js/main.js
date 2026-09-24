@@ -3,7 +3,7 @@
 import { api } from './api.js';
 import { hideTooltip, showTooltip, tooltipHtml } from './charts.js';
 import { DEFINITIONS } from './glossary.js';
-import { initPalette } from './palette.js';
+import { initPalette, initShortcutHelp } from './palette.js';
 import { workspaceIndex, leadingModel } from './data.js';
 import { cadence, date, escapeHtml, html, int } from './format.js';
 import overview from './views/overview.js';
@@ -252,6 +252,7 @@ function bindShell() {
   syncThemeButton();
   bindGlossary();
   const palette = initPalette(() => ({ index: state.index, navigate, setModel }));
+  initShortcutHelp();
   $('search-button').addEventListener('click', () => palette.open());
   if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('search-button').querySelector('kbd').textContent = 'Ctrl K';
   window.addEventListener('hashchange', render);
