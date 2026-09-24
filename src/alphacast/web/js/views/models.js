@@ -1,6 +1,6 @@
 import { legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor, rankAgreement } from '../data.js';
-import { cumulative, escapeHtml, html, num, pct, raw } from '../format.js';
+import { cumulative, escapeHtml, html, num, pct, raw, toneClass } from '../format.js';
 import { definition } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { panel, statusBadge } from './parts.js';
@@ -71,6 +71,8 @@ export default {
         { key: 'net_sharpe', label: 'Net SR', num: true, render: (row) => num(row.net_sharpe, 2) },
         { key: 'information_ratio', label: 'Info ratio', num: true, title: definition('info_ratio'), render: (row) => num(row.information_ratio, 2) },
         { key: 'mean_turnover', label: 'Turnover', num: true, title: definition('turnover'), render: (row) => pct(row.mean_turnover, 0) },
+        { key: 'beta', label: 'Beta', num: true, title: definition('beta'), render: (row) => num(row.beta, 2) },
+        { key: 'alpha_annualized', label: 'Alpha/yr', num: true, title: definition('alpha'), render: (row) => html`<span class="${toneClass(row.alpha_annualized)}">${pct(row.alpha_annualized, 1, { sign: true })}</span>` },
         { key: 'max_drawdown', label: 'Max DD', num: true, render: (row) => pct(row.max_drawdown, 1) },
         { key: 'status', label: 'Health', render: (row) => statusBadge(row.status) },
       ],

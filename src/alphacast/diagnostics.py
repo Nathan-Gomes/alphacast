@@ -22,6 +22,26 @@ def ratio(numerator: float, denominator: float) -> float:
     return float(numerator / denominator) if denominator > 0 else 0.0
 
 
+def market_exposure(returns: pd.Series, benchmark: pd.Series) -> dict[str, float]:
+    """OLS of monthly returns on the benchmark: beta, annualised alpha and its t-stat.
+
+    A sleeve with beta above one earns more than the universe in a rising market
+    without any stock-picking skill; alpha is what remains after that exposure.
+    """
+    if len(returns) < 3 or benchmark.var(ddof=1) == 0:
+        return {"beta": np.nan, "alpha_annualized": np.nan, "alpha_t_stat": 0.0}
+    design = np.column_stack([np.ones(len(benchmark)), benchmark.to_numpy()])
+    coef, *_ = np.linalg.lstsq(design, returns.to_numpy(), rcond=None)
+    residual = returns.to_numpy() - design @ coef
+    variance = residual @ residual / (len(returns) - 2)
+    standard_errors = np.sqrt(np.diag(variance * np.linalg.inv(design.T @ design)))
+    return {
+        "beta": float(coef[1]),
+        "alpha_annualized": float(coef[0] * 12),
+        "alpha_t_stat": ratio(coef[0], standard_errors[0]),
+    }
+
+
 def model_summary(model: str, periods: pd.DataFrame) -> dict[str, object]:
     net = periods.net_return
     gross = periods.gross_return
@@ -56,6 +76,7 @@ def model_summary(model: str, periods: pd.DataFrame) -> dict[str, object]:
         "benchmark_sharpe": ratio(np.sqrt(12) * benchmark.mean(), benchmark.std(ddof=1)),
         "information_ratio": ratio(np.sqrt(12) * active.mean(), active.std(ddof=1)),
         "hit_rate": float((active > 0).mean()),
+        **market_exposure(net, benchmark),
         "max_drawdown": max_drawdown(net),
         "benchmark_max_drawdown": max_drawdown(benchmark),
         "mean_turnover": float(periods.turnover.mean()),

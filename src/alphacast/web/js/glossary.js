@@ -15,6 +15,8 @@ export const DEFINITIONS = {
   psi: ['Population stability index', 'How far a feature\'s recent distribution has moved from its history. Under 0.10 is stable; above 0.25 has shifted.'],
   consensus: ['Consensus', 'How many models place the stock in their top fifth today. The ensemble does not vote, since it is built from the others.'],
   percentile: ['Score percentile', 'Where the model\'s score for this stock sits in today\'s cross-section. 100 is the most attractive.'],
+  beta: ['Beta', 'How much the sleeve moves with the equal-weight universe. Above 1 means it amplifies market moves, which lifts returns in a rising market without any stock-picking skill.'],
+  alpha: ['Alpha', 'Annualised return left after removing the sleeve\'s market exposure (beta), from a regression of monthly returns on the universe.'],
   health: ['Model health', 'Degraded if the last six months\' mean Rank IC is negative; watch if it is more than one standard error below the full history.'],
 };
 

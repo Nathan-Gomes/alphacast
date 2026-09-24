@@ -3,6 +3,7 @@ import pandas as pd
 
 from alphacast.diagnostics import (
     add_significance,
+    market_exposure,
     max_drawdown,
     monitoring_summary,
     population_stability,
@@ -53,3 +54,13 @@ def test_holm_adjustment_multiplies_the_smallest_p_value_by_the_number_of_models
     assert abs(result.at["a", "p_value_holm"] - 3 * result.at["a", "p_value"]) < 1e-12
     assert (result.p_value_holm >= result.p_value).all()
     assert result.p_value_holm.is_monotonic_increasing
+
+
+def test_market_exposure_recovers_a_known_beta_and_alpha():
+    rng = np.random.default_rng(1)
+    bench = pd.Series(rng.normal(0.01, 0.04, 240))
+    returns = 0.002 + 1.3 * bench + pd.Series(rng.normal(0, 0.001, 240))
+    exposure = market_exposure(returns, bench)
+    assert abs(exposure["beta"] - 1.3) < 0.01
+    assert abs(exposure["alpha_annualized"] - 0.024) < 0.003
+    assert exposure["alpha_t_stat"] > 10
