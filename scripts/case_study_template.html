@@ -5,6 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="AlphaCast: a machine-learning equity ranking workstation by Nathan Gomes. Five models on embargoed walk-forward folds across 98 US large caps, live signals, portfolio construction and model monitoring.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AlphaCast: machine-learning equity ranking workstation">
+<meta property="og:description" content="Five models on embargoed walk-forward folds across 98 US large caps. Random Forest found a small, statistically real ranking signal that survived costs and fades in calm markets.">
+<meta property="og:image" content="https://www.nathan-gomes.com/assets/alphacast-overview.png">
+<meta property="og:url" content="https://www.nathan-gomes.com/Project-AlphaCast.dc.html">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="./revamp.css">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,9 +50,10 @@
       <a href="#performance">03 &nbsp;Performance</a>
       <a href="#models">04 &nbsp;Did ML help?</a>
       <a href="#regimes">05 &nbsp;When it works</a>
-      <a href="#system">06 &nbsp;How it works</a>
-      <a href="#trust">07 &nbsp;Validation</a>
-      <a href="#next">08 &nbsp;Next</a>
+      <a href="#costs">06 &nbsp;Costs &amp; sectors</a>
+      <a href="#system">07 &nbsp;How it works</a>
+      <a href="#trust">08 &nbsp;Validation</a>
+      <a href="#next">09 &nbsp;Next</a>
     </div>
   </div>
 </div>
@@ -211,9 +218,35 @@
       <div class="readout"><b>Most of the edge comes from volatile markets.</b> In calm expansions, the most common state, the ranking was indistinguishable from random. The last six folds average an IC of {rf_recent}, which is why the monitoring view flags the model as degraded going into the {signal} signal.</div>
     </section>
 
-    <section id="system" style="padding:80px 0 0">
+    <section id="costs" style="padding:80px 0 0">
       <div class="sechead">
         <div class="secnum">06</div>
+        <div>
+          <p class="eyebrow">Costs and concentration</p>
+          <h2>How much trading and concentration the edge can carry</h2>
+          <p class="lede">Every period stores gross return and turnover, so net results can be rebuilt at any trading cost. The same history shows where the ranking works inside each sector and where the top-ranked sleeve leans.</p>
+        </div>
+      </div>
+      <div class="chart-card">
+        <p class="eyebrow" style="color:var(--muted)">Net Sharpe against one-way trading cost</p>
+        {cost_svg}
+        {cost_legend}
+      </div>
+      <div class="readout"><b>The risk-adjusted edge is thin.</b> Random Forest's net Sharpe falls to the universe's at about <b>{rf_even} bps</b> one way; momentum, which trades less, holds on to about <b>{mom_even} bps</b>. Below roughly <b>{cross} bps</b> Random Forest has the better net Sharpe; above it, the simpler baseline wins. Large-cap trading costs are usually well below either, but the margin is not wide.</div>
+      <div class="chart-card">
+        <div class="tablewrap" style="margin-top:0">
+          <table class="results">
+            <thead><tr><th>Sector (Random Forest)</th><th>Names</th><th>Within-sector IC</th><th>IC &gt; 0</th><th>Active weight</th></tr></thead>
+            <tbody>{sector_rows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="readout"><b>The sleeve leans, and the app lets you cap it.</b> On average the top 15 carried {top_sector_weight} more {top_sector} than the universe. Runs can cap names per sector to test whether the ranking survives diversification. Sectors with four or five names give noisy ICs.</div>
+    </section>
+
+    <section id="system" style="padding:80px 0 0">
+      <div class="sechead">
+        <div class="secnum">07</div>
         <div>
           <p class="eyebrow">How it works</p>
           <h2>From daily prices to a monitored portfolio</h2>
@@ -229,7 +262,7 @@
 
     <section id="trust" style="padding:80px 0 0">
       <div class="sechead">
-        <div class="secnum">07</div>
+        <div class="secnum">08</div>
         <div>
           <p class="eyebrow">Validation</p>
           <h2>Why the numbers can be trusted, and where they cannot</h2>
@@ -237,7 +270,7 @@
       </div>
       <div class="evidence" style="margin-top:32px">
         <div class="ecard"><p class="eyebrow">Leakage controls</p><h3>Every label starts after its decision</h3><p>Features use data through the decision close; the 20-session target starts the next session; training ends 20 sessions before each test date so labels never overlap. Stale quarterly fits can only be older, never newer.</p><span class="stat">Tested: embargo, month-end folds, sampler equivalence</span></div>
-        <div class="ecard"><p class="eyebrow">Engineering</p><h3>Bugs found by inspecting the data</h3><p>Building the app surfaced a forward-return shift that crossed ticker boundaries, a Yahoo session published for 28 of 98 stocks, and a truncated final month counted as a fold. Each is fixed and covered by a regression test.</p><span class="stat">22 pytest cases &middot; ruff &middot; CI on every push</span></div>
+        <div class="ecard"><p class="eyebrow">Engineering</p><h3>Bugs found by inspecting the data</h3><p>Building the app surfaced a forward-return shift that crossed ticker boundaries, a Yahoo session published for 28 of 98 stocks, and a truncated final month counted as a fold. Each is fixed and covered by a regression test.</p><span class="stat">{tests} pytest cases &middot; ruff &middot; CI on every push</span></div>
         <div class="ecard"><p class="eyebrow">Deliberately not claimed</p><h3>What this cannot show</h3><p>The universe is today's large caps, so results carry survivorship bias. There are no point-in-time fundamentals, delisting returns, borrow costs, taxes or market-impact model, and no portfolio optimizer.</p><span class="stat">Stated in the app, the README and here</span></div>
         <div class="ecard"><p class="eyebrow">Explainability</p><h3>Attribution for every ranked stock</h3><p>Each score is decomposed by setting one feature at a time to the day's median. The decomposition is exact for the linear models and a local approximation for trees; reliance is compared across models on one scale.</p><span class="stat">Occlusion attribution &middot; reliance drift</span></div>
       </div>
@@ -245,7 +278,7 @@
 
     <section id="next" style="padding:80px 0 0">
       <div class="sechead">
-        <div class="secnum">08</div>
+        <div class="secnum">09</div>
         <div>
           <p class="eyebrow">Next research iteration</p>
           <h2>Strengthen the data before expanding the claim</h2>

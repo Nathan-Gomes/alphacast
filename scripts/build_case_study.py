@@ -50,7 +50,10 @@ def cumulative(returns: list[float]) -> list[float]:
     return out
 
 
-def line_chart(series: list[dict], dates: list[str], *, y_format, label: str, baseline=None, log=False) -> str:
+def line_chart(
+    series: list[dict], dates: list[str], *, y_format, label: str, baseline=None, log=False,
+    x_ticks: list[tuple[int, str]] | None = None,
+) -> str:
     """Static SVG in the case-study idiom: hairline grid, mono axis labels, 2px lines."""
     import math
 
@@ -83,12 +86,13 @@ def line_chart(series: list[dict], dates: list[str], *, y_format, label: str, ba
         y = sy(tick)
         parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{right}" y2="{y:.1f}" stroke="#e6e2db" stroke-width="1"/>')
         parts.append(f'<text x="{left - 8}" y="{y + 3.5:.1f}" text-anchor="end" font-size="10" fill="#a2a5a8">{y_format(tick)}</text>')
-    years = {}
-    for i, day in enumerate(dates):
-        years.setdefault(day[:4], i)
-    for year, i in years.items():
-        if int(year) % 2 == 1 or i == 0:
-            parts.append(f'<text x="{sx(i):.1f}" y="{bottom + 18}" text-anchor="middle" font-size="10" fill="#a2a5a8">{year}</text>')
+    if x_ticks is None:
+        years: dict[str, int] = {}
+        for i, day in enumerate(dates):
+            years.setdefault(day[:4], i)
+        x_ticks = [(i, year) for year, i in years.items() if int(year) % 2 == 1 or i == 0]
+    for i, text in x_ticks:
+        parts.append(f'<text x="{sx(i):.1f}" y="{bottom + 18}" text-anchor="middle" font-size="10" fill="#a2a5a8">{text}</text>')
     if baseline is not None:
         y = sy(baseline)
         parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{right}" y2="{y:.1f}" stroke="#16181a" stroke-width="1"/>')
@@ -108,6 +112,17 @@ def legend(series: list[dict]) -> str:
         style = f"background:{s['color']}" if not s.get("dash") else f"background:repeating-linear-gradient(90deg,{s['color']} 0 5px,transparent 5px 9px)"
         items.append(f'<span><span class="swatch" style="{style}"></span>{s["label"]}</span>')
     return f'<div class="legend">{"".join(items)}</div>'
+
+
+def _test_count() -> int:
+    """Collected pytest cases, so the page never quotes a stale number."""
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q"], cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    match = re.search(r"(\d+) tests? collected", result.stdout)
+    return int(match.group(1)) if match else 0
 
 
 def main(output: Path) -> None:
@@ -177,6 +192,43 @@ def main(output: Path) -> None:
         )
     regime_rows = "".join(regime_parts)
 
+    # Costs: net Sharpe rebuilt from gross returns and turnover at each one-way cost.
+    def sharpe(values: list[float]) -> float:
+        mean = sum(values) / len(values)
+        sd = (sum((v - mean) ** 2 for v in values) / (len(values) - 1)) ** 0.5
+        return (12 ** 0.5) * mean / sd if sd else 0.0
+
+    def net_at(rows: list[dict], bps: float) -> list[float]:
+        return [r["gross_return"] - r["turnover"] * bps / 10_000 for r in rows]
+
+    bench_sharpe = sharpe([r["benchmark_return"] for r in rf_periods])
+    grid = list(range(0, 105, 5))
+    cost_series = [
+        {"label": "Random Forest, net Sharpe", "color": COLORS["random_forest"], "values": [sharpe(net_at(rf_periods, b)) for b in grid], "width": 2.4},
+        {"label": "Momentum 12-1, net Sharpe", "color": COLORS["momentum"], "values": [sharpe(net_at(periods["momentum"], b)) for b in grid]},
+        {"label": "Universe Sharpe", "color": "#7d858c", "values": [bench_sharpe] * len(grid), "dash": True},
+    ]
+    cost_svg = line_chart(
+        cost_series, [str(b) for b in grid], y_format=lambda v: f"{v:.2f}",
+        label="Net Sharpe ratio against one-way trading cost from 0 to 100 basis points",
+        x_ticks=[(i, f"{b} bps") for i, b in enumerate(grid) if b % 20 == 0],
+    )
+    rf_even = next((b for b in range(1001) if sharpe(net_at(rf_periods, b)) <= bench_sharpe), None)
+    cross = next((b for b in range(1001) if sharpe(net_at(rf_periods, b)) <= sharpe(net_at(periods["momentum"], b))), None)
+    mom_even = next((b for b in range(1001) if sharpe(net_at(periods["momentum"], b)) <= bench_sharpe), None)
+
+    sector_rows = sorted((row for row in ws.get("sectors", []) if row["model"] == "random_forest"), key=lambda row: -row["mean_active_weight"])
+    sector_parts = []
+    for i, row in enumerate(sector_rows):
+        highlight = ' class="win"' if i < 2 else ""
+        sector_parts.append(
+            f"<tr{highlight}><td>{row['sector']}</td><td>{row['names']}</td><td>{row['mean_rank_ic']:.3f}</td>"
+            f"<td>{pct(row['positive_ic_rate'], 0)}</td><td>{pct(row['mean_active_weight'], 1, sign=True)}</td></tr>"
+        )
+    sector_html = "".join(sector_parts)
+    top_sector = sector_rows[0] if sector_rows else None
+    tests = _test_count()
+
     template = (ROOT / "scripts" / "case_study_template.html").read_text()
     style_path = output.parent / STYLE_SOURCE
     style = re.search(r"<style>.*?</style>", style_path.read_text(), re.DOTALL).group(0)
@@ -216,6 +268,15 @@ def main(output: Path) -> None:
         ic_svg=ic_svg,
         result_rows="\n".join(rows_html),
         regime_rows=regime_rows,
+        cost_svg=cost_svg,
+        cost_legend=legend(cost_series),
+        rf_even=rf_even if rf_even is not None else "1,000+",
+        mom_even=mom_even if mom_even is not None else "1,000+",
+        cross=cross if cross is not None else "1,000+",
+        sector_rows=sector_html,
+        top_sector=top_sector["sector"] if top_sector else "",
+        top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
+        tests=tests,
     )
     output.write_text(page)
     print(f"Wrote {output} ({len(page) / 1000:.0f} kB)")
