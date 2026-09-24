@@ -41,6 +41,7 @@ class RunPayload(BaseModel):
     top_n: int = Field(default=15, ge=3, le=40)
     max_per_sector: int | None = Field(default=None, ge=1, le=20)
     rebalance_every_folds: int = Field(default=1, ge=1, le=3)
+    hold_buffer: int | None = Field(default=None, ge=1, le=150)
     transaction_cost_bps: float = Field(default=10.0, ge=0, le=250)
 
     @field_validator("start", "end")
@@ -122,6 +123,8 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         raise HTTPException(422, "The ensemble combines other models: select at least two of Ridge, Elastic Net, Random Forest and Gradient Boosting.")
     if payload.start >= payload.end:
         raise HTTPException(422, "The start date must be before the end date.")
+    if payload.hold_buffer is not None and payload.hold_buffer < payload.top_n:
+        raise HTTPException(422, "The holding buffer must be at least the portfolio size.")
     if payload.universe == "custom":
         tickers = list(dict.fromkeys(t.upper().strip() for t in payload.tickers if t.strip()))
     else:
@@ -139,6 +142,7 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         transaction_cost_bps=payload.transaction_cost_bps,
         max_per_sector=payload.max_per_sector,
         rebalance_every_folds=payload.rebalance_every_folds,
+        hold_buffer=payload.hold_buffer,
     )
     name = payload.name.strip() or f"{payload.source.title()} · {len(models)} models"
     record = registry.submit(

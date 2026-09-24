@@ -18,20 +18,45 @@ class PortfolioStep:
 
 
 def select_top(
-    rows: pd.DataFrame, scores: pd.Series, *, top_n: int, max_per_sector: int | None = None
+    rows: pd.DataFrame,
+    scores: pd.Series,
+    *,
+    top_n: int,
+    max_per_sector: int | None = None,
+    keep: set[str] | None = None,
+    keep_within: int | None = None,
 ) -> pd.DataFrame:
-    """The highest-scored rows, skipping a name once its sector already holds the cap.
+    """The highest-scored rows, with an optional sector cap and holding buffer.
 
-    Without a cap this is simply the top ``top_n``. With one, lower-ranked names from
-    other sectors fill the places, so the sleeve always holds ``top_n`` when it can.
+    Without options this is simply the top ``top_n``. A cap skips a name once its sector
+    holds ``max_per_sector``. A buffer keeps any name in ``keep`` (the current book)
+    while it still ranks within ``keep_within``, and fills the remaining places from the
+    top, so a stock is not sold just because it slipped from 15th to 17th.
     """
     if top_n < 1:
         raise ValueError("top_n must be positive.")
     ranked = rows.assign(score=scores).sort_values("score", ascending=False, kind="stable")
-    if not max_per_sector:
-        return ranked.head(min(top_n, len(ranked))).copy()
-    within_sector = ranked.groupby("sector").cumcount()
-    return ranked.loc[within_sector < max_per_sector].head(top_n).copy()
+    ranked = ranked.assign(_position=range(len(ranked)))
+    if not max_per_sector and not (keep and keep_within):
+        return ranked.head(min(top_n, len(ranked))).drop(columns="_position").copy()
+    chosen: list[int] = []
+    per_sector: dict[str, int] = {}
+
+    def take(frame: pd.DataFrame) -> None:
+        for label, row in frame.iterrows():
+            if len(chosen) >= top_n:
+                return
+            if label in chosen:
+                continue
+            if max_per_sector and per_sector.get(row.sector, 0) >= max_per_sector:
+                continue
+            chosen.append(label)
+            per_sector[row.sector] = per_sector.get(row.sector, 0) + 1
+
+    if keep and keep_within:
+        take(ranked.loc[ranked.ticker.isin(keep) & (ranked._position < keep_within)])
+    take(ranked)
+    return ranked.loc[chosen].drop(columns="_position").copy()
 
 
 def top_ranked_portfolio(
@@ -42,9 +67,14 @@ def top_ranked_portfolio(
     top_n: int,
     transaction_cost_bps: float,
     max_per_sector: int | None = None,
+    hold_buffer: int | None = None,
 ) -> tuple[PortfolioStep, pd.Series]:
     """Construct a top-ranked equal-weight sleeve and charge one-way turnover costs."""
-    selected = select_top(rows, scores, top_n=top_n, max_per_sector=max_per_sector)
+    selected = select_top(
+        rows, scores, top_n=top_n, max_per_sector=max_per_sector,
+        keep=set(previous_weights.index) if previous_weights is not None else None,
+        keep_within=hold_buffer,
+    )
     weights = pd.Series(1.0 / len(selected), index=selected.ticker, dtype=float)
     if previous_weights is None:
         turnover = 0.0

@@ -41,6 +41,8 @@ class ResearchConfig:
     top_n: int = 15
     # Optional cap on names per sector in the top-ranked sleeve; None means no cap.
     max_per_sector: int | None = None
+    # Keep a held name while it ranks within this many places; None trades to the top N.
+    hold_buffer: int | None = None
     transaction_cost_bps: float = 10.0
     monitoring_window: int = 6
     models: tuple[str, ...] = SUPPORTED_MODELS

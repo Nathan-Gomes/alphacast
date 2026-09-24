@@ -554,6 +554,7 @@ def run_research(
                     top_n=config.top_n,
                     transaction_cost_bps=config.transaction_cost_bps,
                     max_per_sector=config.max_per_sector,
+                    hold_buffer=config.hold_buffer,
                 )
             periods.append(
                 {
@@ -595,7 +596,9 @@ def run_research(
         live_scores, contributions = live_outputs[model_name]
         order = live_scores.rank(ascending=False, method="first").astype(int)
         chosen = select_top(
-            live_rows, live_scores, top_n=config.top_n, max_per_sector=config.max_per_sector
+            live_rows, live_scores, top_n=config.top_n, max_per_sector=config.max_per_sector,
+            keep=set(previous_weights.index) if previous_weights is not None else None,
+            keep_within=config.hold_buffer,
         )
         top = live_rows.ticker.isin(chosen.ticker)
         live = pd.DataFrame(

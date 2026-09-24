@@ -64,3 +64,14 @@ def test_holding_a_book_costs_nothing_and_earns_its_names():
     assert step.turnover == 0.0 and step.transaction_cost == 0.0
     assert abs(step.gross_return - 0.005) < 1e-12
     assert step.net_return == step.gross_return
+
+
+def test_buffer_keeps_holdings_that_only_slipped_a_little():
+    from alphacast.portfolio import select_top
+
+    rows = pd.DataFrame({"ticker": list("ABCDEF"), "sector": ["X"] * 6})
+    scores = pd.Series([6.0, 5.0, 4.0, 3.0, 2.0, 1.0])
+    # D and F were held; D is 4th (inside a buffer of 4), F is 6th (outside it).
+    picked = select_top(rows, scores, top_n=3, keep={"D", "F"}, keep_within=4)
+    assert list(picked.ticker) == ["D", "A", "B"]
+    assert list(select_top(rows, scores, top_n=3).ticker) == ["A", "B", "C"]

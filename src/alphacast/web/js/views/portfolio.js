@@ -12,7 +12,7 @@ import { panel, pctBar, rankChange, tickerLink } from './parts.js';
 
 export default {
   title: 'Portfolio',
-  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}${ctx.index.ws.config.max_per_sector ? `, at most ${ctx.index.ws.config.max_per_sector} per sector` : ''}, long-only, rebalanced ${cadence(ctx.index.ws.config.rebalance_every_folds)}`,
+  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}${ctx.index.ws.config.max_per_sector ? `, at most ${ctx.index.ws.config.max_per_sector} per sector` : ''}, long-only, rebalanced ${cadence(ctx.index.ws.config.rebalance_every_folds)}${ctx.index.ws.config.hold_buffer ? `, holdings kept while in the top ${ctx.index.ws.config.hold_buffer}` : ''}`,
   render(ctx) {
     const { index, model } = ctx;
     const rows = liveRows(index, model);

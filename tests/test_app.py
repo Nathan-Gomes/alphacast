@@ -60,6 +60,8 @@ def test_invalid_requests_are_rejected_with_a_reason():
     assert lonely.status_code == 422 and "ensemble" in lonely.json()["detail"]
     too_few = client.post("/api/runs", json={"source": "yahoo", "universe": "custom", "tickers": ["AAPL"]})
     assert too_few.status_code == 422 and "ten" in too_few.json()["detail"]
+    small_buffer = client.post("/api/runs", json={"top_n": 15, "hold_buffer": 10})
+    assert small_buffer.status_code == 422 and "buffer" in small_buffer.json()["detail"]
     backwards = client.post("/api/runs", json={"start": "2025-01-01", "end": "2020-01-01"})
     assert backwards.status_code == 422
 
