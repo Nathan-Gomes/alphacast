@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { columnChart, hbars, legend, lineChart } from '../charts.js';
 import { liveRows, modelColor } from '../data.js';
 import { html, isNum, mean, money, num, pct, raw, toneClass } from '../format.js';
+import { term } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { heatCell, panel } from './parts.js';
 import { bindStars, starButton } from '../watchlist.js';
@@ -45,7 +46,7 @@ export default {
       </div>
       <div class="kpis">
         <div class="kpi"><div class="label">Rank · ${index.labels[model]}</div><div class="value">${live.rank} <span class="muted" style="font-size:14px">/ ${total}</span></div><div class="sub">Quintile Q${live.quintile}</div></div>
-        <div class="kpi"><div class="label">Score percentile</div><div class="value">${num(live.percentile, 0)}</div><div class="sub">${isNum(live.previous_rank) ? `Rank ${live.previous_rank} at last rebalance` : 'Unranked at last rebalance'}</div></div>
+        <div class="kpi"><div class="label">${raw(term('percentile'))}</div><div class="value">${num(live.percentile, 0)}</div><div class="sub">${isNum(live.previous_rank) ? `Rank ${live.previous_rank} at last rebalance` : 'Unranked at last rebalance'}</div></div>
         <div class="kpi"><div class="label">Model output</div><div class="value ${toneClass(live.predicted_relative_return)}">${model === 'momentum' ? '—' : pct(live.predicted_relative_return, 2, { sign: true })}</div><div class="sub">${model === 'ensemble' ? 'Average rank of the member models' : 'Predicted 20-session return vs sector'}</div></div>
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${live.in_portfolio ? 'Held' : 'Not held'}</div><div class="sub">${live.in_portfolio ? `${pct(live.weight, 1)} weight${live.was_held ? '' : ' · entering'}` : live.was_held ? 'Exiting at this signal' : `Top ${index.ws.config.top_n} are held`}</div></div>
       </div>

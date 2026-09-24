@@ -1,6 +1,7 @@
 import { columnChart, legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor } from '../data.js';
 import { cadence, cumulative, date, downloadFile, drawdowns, html, mean, num, pct, raw, rolling, std, toCsv, toneClass } from '../format.js';
+import { term } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { panel } from './parts.js';
 
@@ -32,10 +33,10 @@ export default {
     ctx.el.innerHTML = html`
       <div class="kpis">
         <div class="kpi"><div class="label">Annualized net return</div><div class="value">${pct(s.annualized_net_return)}</div><div class="sub">Benchmark ${pct(s.annualized_benchmark_return)}</div></div>
-        <div class="kpi"><div class="label">Sharpe, gross → net</div><div class="value">${num(s.gross_sharpe, 2)} → ${num(s.net_sharpe, 2)}</div><div class="sub">Benchmark ${num(s.benchmark_sharpe, 2)}</div></div>
-        <div class="kpi"><div class="label">Information ratio</div><div class="value">${num(s.information_ratio, 2)}</div><div class="sub">Beat the universe in ${pct(s.hit_rate, 0)} of months</div></div>
-        <div class="kpi"><div class="label">Max drawdown</div><div class="value neg">${pct(s.max_drawdown)}</div><div class="sub">Benchmark ${pct(s.benchmark_max_drawdown)}</div></div>
-        <div class="kpi"><div class="label">Avg monthly turnover</div><div class="value">${pct(s.mean_turnover, 0)}</div><div class="sub">Cost drag ${pct(s.annualized_cost_drag, 2)} per year</div></div>
+        <div class="kpi"><div class="label">${raw(term('sharpe', 'Sharpe, gross → net'))}</div><div class="value">${num(s.gross_sharpe, 2)} → ${num(s.net_sharpe, 2)}</div><div class="sub">Benchmark ${num(s.benchmark_sharpe, 2)}</div></div>
+        <div class="kpi"><div class="label">${raw(term('info_ratio'))}</div><div class="value">${num(s.information_ratio, 2)}</div><div class="sub">Beat the universe in ${pct(s.hit_rate, 0)} of months</div></div>
+        <div class="kpi"><div class="label">${raw(term('drawdown'))}</div><div class="value neg">${pct(s.max_drawdown)}</div><div class="sub">Benchmark ${pct(s.benchmark_max_drawdown)}</div></div>
+        <div class="kpi"><div class="label">${raw(term('turnover', 'Avg monthly turnover'))}</div><div class="value">${pct(s.mean_turnover, 0)}</div><div class="sub">Cost drag ${pct(s.annualized_cost_drag, 2)} per year</div></div>
         <div class="kpi"><div class="label">Terminal growth, net</div><div class="value ${toneClass(s.net_terminal_growth - s.benchmark_terminal_growth)}">${pct(s.net_terminal_growth, 0)}</div><div class="sub">Gross ${pct(s.gross_terminal_growth, 0)} · benchmark ${pct(s.benchmark_terminal_growth, 0)}</div></div>
       </div>
       ${raw(panel({ title: 'Growth of $1', note: `${periods.length} monthly out-of-sample holding periods from ${date(dates[0])} to ${date(periods.at(-1).date)}. The top ${index.ws.config.top_n} names are rebalanced ${cadence(index.ws.config.rebalance_every_folds)} and each period earns the next 20 sessions.`, body: '<div id="growth-legend"></div><div id="growth"></div>' }))}

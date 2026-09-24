@@ -1,6 +1,7 @@
 import { legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, leadingModel, liveRows, modelColor, votingModels } from '../data.js';
 import { cumulative, date, html, num, pct, raw, sectorShort, toneClass } from '../format.js';
+import { term } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { consensusCell, pctBar, rankChange, statusBadge, tickerLink } from './parts.js';
 import { bindStars, starButton, watchlist } from '../watchlist.js';
@@ -51,10 +52,10 @@ export default {
     ctx.el.innerHTML = html`
       <div class="kpis">
         <div class="kpi"><div class="label">Signal date</div><div class="value">${date(index.ws.signal_date)}</div><div class="sub">Last evaluated rebalance ${date(index.ws.last_rebalance)}</div></div>
-        <div class="kpi"><div class="label">Mean Rank IC</div><div class="value">${num(summary.mean_rank_ic, 3)}</div><div class="sub">t = ${num(summary.ic_t_stat, 2)} · ${pct(summary.positive_ic_rate, 0)} positive months</div></div>
-        <div class="kpi"><div class="label">Net Sharpe</div><div class="value">${num(summary.net_sharpe, 2)}</div><div class="sub">Benchmark ${num(summary.benchmark_sharpe, 2)} · IR ${num(summary.information_ratio, 2)}</div></div>
+        <div class="kpi"><div class="label">${raw(term('rank_ic', 'Mean Rank IC'))}</div><div class="value">${num(summary.mean_rank_ic, 3)}</div><div class="sub">t = ${num(summary.ic_t_stat, 2)} · ${pct(summary.positive_ic_rate, 0)} positive months</div></div>
+        <div class="kpi"><div class="label">${raw(term('sharpe', 'Net Sharpe'))}</div><div class="value">${num(summary.net_sharpe, 2)}</div><div class="sub">Benchmark ${num(summary.benchmark_sharpe, 2)} · IR ${num(summary.information_ratio, 2)}</div></div>
         <div class="kpi"><div class="label">Annualized, net</div><div class="value ${toneClass(summary.annualized_net_return - summary.annualized_benchmark_return)}">${pct(summary.annualized_net_return)}</div><div class="sub">Benchmark ${pct(summary.annualized_benchmark_return)}</div></div>
-        <div class="kpi"><div class="label">Model health</div><div class="value">${raw(statusBadge(health.status))}</div><div class="sub">Recent IC ${num(health.recent_mean_rank_ic, 3)} over ${health.window_folds} folds</div></div>
+        <div class="kpi"><div class="label">${raw(term('health'))}</div><div class="value">${raw(statusBadge(health.status))}</div><div class="sub">Recent IC ${num(health.recent_mean_rank_ic, 3)} over ${health.window_folds} folds</div></div>
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${holdings.length} names</div><div class="sub">${entering} entering at this signal</div></div>
       </div>
       <section class="verdict" aria-labelledby="verdict-title"><h2 id="verdict-title">Research read-out</h2><p>${verdict(index, model)}</p></section>

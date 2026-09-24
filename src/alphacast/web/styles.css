@@ -449,3 +449,6 @@ details.advanced[open] { padding-bottom: 12px; }
 .run-headline b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
 .spec-text { white-space: normal; display: inline-block; max-width: 520px; font-size: 12.5px; }
 .explain { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink); }
+.term { border-bottom: 1px dotted var(--muted); cursor: help; }
+.term:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+.tooltip .tt-text { color: var(--ink-2); line-height: 1.5; white-space: normal; }

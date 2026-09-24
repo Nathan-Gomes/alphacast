@@ -1,7 +1,8 @@
 // AlphaCast workstation shell: state, routing, workspace loading, run polling.
 
 import { api } from './api.js';
-import { hideTooltip } from './charts.js';
+import { hideTooltip, showTooltip, tooltipHtml } from './charts.js';
+import { DEFINITIONS } from './glossary.js';
 import { initPalette } from './palette.js';
 import { workspaceIndex, leadingModel } from './data.js';
 import { cadence, date, escapeHtml, html, int } from './format.js';
@@ -228,8 +229,23 @@ function syncThemeButton() {
   $('theme-button').title = label;
 }
 
+function bindGlossary() {
+  const show = (element, event) => {
+    const [title, text] = DEFINITIONS[element.dataset.term] || [];
+    if (!title) return;
+    const box = element.getBoundingClientRect();
+    const anchor = event?.clientX ? event : { clientX: box.left, clientY: box.bottom + 4 };
+    showTooltip(anchor, `${tooltipHtml(title, [])}<div class="tt-text">${text}</div>`);
+  };
+  document.addEventListener('pointerover', (event) => { const el = event.target.closest?.('[data-term]'); if (el) show(el, event); });
+  document.addEventListener('pointerout', (event) => { if (event.target.closest?.('[data-term]')) hideTooltip(); });
+  document.addEventListener('focusin', (event) => { const el = event.target.closest?.('[data-term]'); if (el) show(el); });
+  document.addEventListener('focusout', (event) => { if (event.target.closest?.('[data-term]')) hideTooltip(); });
+}
+
 function bindShell() {
   syncThemeButton();
+  bindGlossary();
   const palette = initPalette(() => ({ index: state.index, navigate, setModel }));
   $('search-button').addEventListener('click', () => palette.open());
   if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('search-button').querySelector('kbd').textContent = 'Ctrl K';

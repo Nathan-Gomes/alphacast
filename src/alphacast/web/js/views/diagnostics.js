@@ -1,6 +1,7 @@
 import { categoryBars, columnChart, hbars, legend, lineChart } from '../charts.js';
 import { modelColor } from '../data.js';
 import { html, mean, num, pct, raw, rolling, sectorShort, toneClass } from '../format.js';
+import { term } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { panel } from './parts.js';
 
@@ -23,10 +24,10 @@ export default {
 
     ctx.el.innerHTML = html`
       <div class="kpis">
-        <div class="kpi"><div class="label">Mean Rank IC</div><div class="value">${num(s.mean_rank_ic, 3)}</div><div class="sub">IC volatility ${num(s.ic_volatility, 3)}</div></div>
-        <div class="kpi"><div class="label">IC information ratio</div><div class="value">${num(s.ic_information_ratio, 2)}</div><div class="sub">t ${num(s.ic_t_stat, 2)} · p ${num(s.p_value, 3)} · Holm p ${num(s.p_value_holm, 3)}</div></div>
+        <div class="kpi"><div class="label">${raw(term('rank_ic', 'Mean Rank IC'))}</div><div class="value">${num(s.mean_rank_ic, 3)}</div><div class="sub">IC volatility ${num(s.ic_volatility, 3)}</div></div>
+        <div class="kpi"><div class="label">${raw(term('ic_ir'))}</div><div class="value">${num(s.ic_information_ratio, 2)}</div><div class="sub">t ${num(s.ic_t_stat, 2)} · p ${num(s.p_value, 3)} · Holm p ${num(s.p_value_holm, 3)}</div></div>
         <div class="kpi"><div class="label">Positive IC months</div><div class="value">${pct(s.positive_ic_rate, 0)}</div><div class="sub">50% is a coin flip</div></div>
-        <div class="kpi"><div class="label">Q1 − Q5 spread</div><div class="value ${toneClass(s.mean_q1_q5_spread)}">${pct(s.mean_q1_q5_spread, 2)}</div><div class="sub">Per 20-session period, vs sector</div></div>
+        <div class="kpi"><div class="label">${raw(term('spread'))}</div><div class="value ${toneClass(s.mean_q1_q5_spread)}">${pct(s.mean_q1_q5_spread, 2)}</div><div class="sub">Per 20-session period, vs sector</div></div>
         <div class="kpi"><div class="label">Quintile ordering</div><div class="value">${monotone ? 'Monotone' : 'Not monotone'}</div><div class="sub">On average across folds</div></div>
       </div>
       ${raw(panel({ title: 'Rank IC by rebalance', note: 'Spearman correlation between the score and the realised sector-relative return in each month. The line is the 12-month rolling mean.', body: '<div id="ic"></div>' }))}

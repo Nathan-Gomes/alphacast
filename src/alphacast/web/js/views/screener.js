@@ -1,5 +1,6 @@
 import { liveRows, votingModels } from '../data.js';
 import { downloadFile, html, pct, sectorShort, toCsv, toneClass, num, raw } from '../format.js';
+import { definition } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { consensusCell, heatCell, pctBar, rankChange, tickerLink } from './parts.js';
 import { bindStars, starButton, watchlist } from '../watchlist.js';
@@ -39,7 +40,7 @@ export default {
       { key: 'percentile', label: 'Score pct.', num: true, render: (row) => pctBar(row.percentile) },
       ...(hasPrediction ? [{ key: 'predicted_relative_return', label: 'Model output', num: true, title: 'Predicted 20-session sector-relative return', render: (row) => html`<span class="${toneClass(row.predicted_relative_return)}">${pct(row.predicted_relative_return, 2, { sign: true })}</span>` }] : []),
       { key: 'quintile', label: 'Q', num: true, render: (row) => `Q${row.quintile}` },
-      { key: 'consensus', label: 'Consensus', num: true, title: 'Models placing this stock in their top quintile today', render: (row) => consensusCell(row.consensus, votingModels(index).length) },
+      { key: 'consensus', label: 'Consensus', num: true, title: definition('consensus'), render: (row) => consensusCell(row.consensus, votingModels(index).length) },
       { key: 'rank_change', label: 'Δ Rank', num: true, render: (row) => rankChange(row.rank_change) },
       { key: 'momentum', label: 'Momentum', num: true, render: (row) => heatCell(row.momentum) },
       { key: 'relative_strength', label: 'Rel. str.', num: true, render: (row) => heatCell(row.relative_strength) },

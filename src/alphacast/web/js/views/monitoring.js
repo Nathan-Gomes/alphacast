@@ -1,6 +1,7 @@
 import { legend, lineChart, pairedBars } from '../charts.js';
 import { modelColor } from '../data.js';
 import { escapeHtml, html, num, pct, raw, rolling, toneClass } from '../format.js';
+import { definition } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { panel, statusBadge } from './parts.js';
 
@@ -61,7 +62,7 @@ export default {
       sortKey: 'psi',
       columns: [
         { key: 'label', label: 'Feature' },
-        { key: 'psi', label: 'PSI', num: true, render: (row) => num(row.psi, 3) },
+        { key: 'psi', label: 'PSI', num: true, title: definition('psi'), render: (row) => num(row.psi, 3) },
         { key: 'status', label: 'Status', sort: (row) => row.psi, render: (row) => statusBadge(row.status) },
         { key: 'reference_median', label: 'Historical median', num: true, render: (row) => (RAW_PERCENT.has(row.feature) ? `$${Intl.NumberFormat('en-US', { notation: 'compact' }).format(row.reference_median)}` : pct(row.reference_median, 1)) },
         { key: 'recent_median', label: 'Recent median', num: true, render: (row) => (RAW_PERCENT.has(row.feature) ? `$${Intl.NumberFormat('en-US', { notation: 'compact' }).format(row.recent_median)}` : pct(row.recent_median, 1)) },

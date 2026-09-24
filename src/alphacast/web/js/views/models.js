@@ -1,6 +1,7 @@
 import { legend, lineChart } from '../charts.js';
 import { BENCH_COLOR, modelColor, rankAgreement } from '../data.js';
 import { cumulative, escapeHtml, html, num, pct, raw } from '../format.js';
+import { definition } from '../glossary.js';
 import { dataTable } from '../table.js';
 import { panel, statusBadge } from './parts.js';
 
@@ -60,16 +61,16 @@ export default {
       onRowClick: (row) => ctx.setModel(row.model),
       columns: [
         { key: 'label', label: 'Model', render: (row) => html`<span class="dot" style="background:${raw(modelColor(row.model))}"></span>${row.label}` },
-        { key: 'mean_rank_ic', label: 'Mean IC', num: true, render: (row) => num(row.mean_rank_ic, 3) },
-        { key: 'ic_t_stat', label: 'IC t-stat', num: true, render: (row) => num(row.ic_t_stat, 2) },
-        { key: 'p_value_holm', label: 'p (Holm)', num: true, title: 'Two-sided p-value for mean IC, adjusted for comparing every model in the run', render: (row) => html`<span class="${row.p_value_holm < 0.05 ? 'pos' : ''}">${num(row.p_value_holm, 3)}</span>` },
+        { key: 'mean_rank_ic', label: 'Mean IC', num: true, title: definition('rank_ic'), render: (row) => num(row.mean_rank_ic, 3) },
+        { key: 'ic_t_stat', label: 'IC t-stat', num: true, title: definition('t_stat'), render: (row) => num(row.ic_t_stat, 2) },
+        { key: 'p_value_holm', label: 'p (Holm)', num: true, title: definition('holm'), render: (row) => html`<span class="${row.p_value_holm < 0.05 ? 'pos' : ''}">${num(row.p_value_holm, 3)}</span>` },
         { key: 'ic_information_ratio', label: 'IC IR', num: true, render: (row) => num(row.ic_information_ratio, 2) },
         { key: 'positive_ic_rate', label: 'IC > 0', num: true, render: (row) => pct(row.positive_ic_rate, 0) },
         { key: 'mean_q1_q5_spread', label: 'Q1 − Q5', num: true, title: 'Average monthly sector-relative spread between top and bottom quintiles', render: (row) => pct(row.mean_q1_q5_spread, 2) },
         { key: 'gross_sharpe', label: 'Gross SR', num: true, render: (row) => num(row.gross_sharpe, 2) },
         { key: 'net_sharpe', label: 'Net SR', num: true, render: (row) => num(row.net_sharpe, 2) },
-        { key: 'information_ratio', label: 'Info ratio', num: true, render: (row) => num(row.information_ratio, 2) },
-        { key: 'mean_turnover', label: 'Turnover', num: true, render: (row) => pct(row.mean_turnover, 0) },
+        { key: 'information_ratio', label: 'Info ratio', num: true, title: definition('info_ratio'), render: (row) => num(row.information_ratio, 2) },
+        { key: 'mean_turnover', label: 'Turnover', num: true, title: definition('turnover'), render: (row) => pct(row.mean_turnover, 0) },
         { key: 'max_drawdown', label: 'Max DD', num: true, render: (row) => pct(row.max_drawdown, 1) },
         { key: 'status', label: 'Health', render: (row) => statusBadge(row.status) },
       ],
