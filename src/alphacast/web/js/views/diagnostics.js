@@ -15,6 +15,7 @@ export default {
     const ic = periods.map((row) => row.rank_ic);
     const quintiles = [1, 2, 3, 4, 5].map((q) => mean(periods.map((row) => row[`q${q}_return`])));
     const monotone = quintiles.every((value, i) => i === 0 || value <= quintiles[i - 1]);
+    const topBeatsBottom = mean(periods.map((row) => (row.q1_return > row.q5_return ? 1 : 0)));
 
     // IC histogram with fixed 0.05-wide bins, centred on zero.
     const edges = [];
@@ -28,7 +29,7 @@ export default {
         <div class="kpi"><div class="label">${raw(term('ic_ir'))}</div><div class="value">${num(s.ic_information_ratio, 2)}</div><div class="sub">t ${num(s.ic_t_stat, 2)} · p ${num(s.p_value, 3)} · Holm p ${num(s.p_value_holm, 3)}</div></div>
         <div class="kpi"><div class="label">Positive IC months</div><div class="value">${pct(s.positive_ic_rate, 0)}</div><div class="sub">50% is a coin flip</div></div>
         <div class="kpi"><div class="label">${raw(term('spread'))}</div><div class="value ${toneClass(s.mean_q1_q5_spread)}">${pct(s.mean_q1_q5_spread, 2)}</div><div class="sub">Per 20-session period, vs sector</div></div>
-        <div class="kpi"><div class="label">Quintile ordering</div><div class="value">${monotone ? 'Monotone' : 'Not monotone'}</div><div class="sub">On average across folds</div></div>
+        <div class="kpi"><div class="label">Q1 beats Q5</div><div class="value">${pct(topBeatsBottom, 0)}</div><div class="sub">${monotone ? 'Average quintiles in order' : 'Middle quintiles out of order'} · all five ordered in ${pct(s.monotonic_rate, 0)} of months</div></div>
       </div>
       ${raw(panel({ title: 'Rank IC by rebalance', note: 'Spearman correlation between the score and the realised sector-relative return in each month. The line is the 12-month rolling mean.', body: '<div id="ic"></div>' }))}
       <div class="grid cols-2 section-gap">

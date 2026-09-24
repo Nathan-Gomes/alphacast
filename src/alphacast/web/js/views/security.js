@@ -138,7 +138,7 @@ export default {
       lineChart(document.getElementById('price'), {
         dates: detail.prices.dates, regions,
         series: [{ label: ticker, color: 'var(--series-1)', values, area: !logPrice }],
-        height: 250, yFormat: (value) => { const v = unlog(value); return `$${v >= 1000 ? v.toFixed(0) : v.toFixed(v >= 100 ? 0 : 2)}`; },
+        height: 250, yFormat: (value) => { const v = unlog(value); return `$${v >= 10 || v === 0 ? Math.round(v).toLocaleString('en-US') : v.toFixed(2)}`; },
         tooltipFormat: (value) => money(unlog(value)), label: `${ticker} weekly adjusted close${logPrice ? ', log scale' : ''}`,
       });
     };
