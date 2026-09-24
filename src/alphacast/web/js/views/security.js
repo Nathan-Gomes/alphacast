@@ -5,6 +5,7 @@ import { html, isNum, mean, money, num, pct, raw, toneClass } from '../format.js
 import { dataTable } from '../table.js';
 import { heatCell, panel } from './parts.js';
 import { bindStars, starButton } from '../watchlist.js';
+import { explainRank } from '../explain.js';
 
 const PERCENT_FEATURES = new Set(['return_21', 'return_63', 'return_126', 'momentum_12_1', 'volatility_20', 'volatility_60', 'downside_volatility_60', 'drawdown_252', 'distance_high_252', 'ma_ratio_50_200', 'volume_ratio_20', 'market_relative_63', 'sector_relative_63']);
 
@@ -121,13 +122,14 @@ export default {
     // ensemble, standard deviations of each member's score.
     const scale = model === 'momentum' ? 100 : model === 'ensemble' ? 1 : 10_000;
     const unitDigits = model === 'ensemble' ? 2 : model === 'momentum' ? 0 : 1;
-    document.getElementById('attribution').innerHTML = attribution.every((row) => row.contribution === 0)
+    const summary = explainRank({ ticker, rank: live.rank, total, modelLabel: index.labels[model], attribution, labels: index.featureLabels });
+    document.getElementById('attribution').innerHTML = html`<p class="explain">${summary}</p>` + (attribution.every((row) => row.contribution === 0)
       ? '<p class="empty">No feature moves this score.</p>'
       : hbars(attribution.slice(0, 10).map((row) => ({
         label: index.featureLabels[row.feature], value: row.contribution * scale,
         title: `${index.featureLabels[row.feature]}: ${featureValue(row.feature, row.value)} (${num(row.percentile, 0)} pct.)`,
       })), { signed: true, format: (value) => num(value, unitDigits, { sign: true }), color: 'var(--series-1)', negativeColor: 'var(--series-2)' })
-        + `<p class="note">Units: ${{ momentum: 'percentile points of the momentum score', ensemble: 'standard deviations of each member model\'s score, averaged across members' }[model] || 'basis points of predicted relative return'}. ${model === 'ridge' || model === 'elastic_net' ? 'For linear models this decomposition is exact.' : model === 'momentum' ? 'The baseline uses one input by design.' : model === 'ensemble' ? 'Each member is explained separately, then combined.' : 'For tree models it is a local approximation that ignores interactions.'}</p>`;
+        + `<p class="note">Units: ${{ momentum: 'percentile points of the momentum score', ensemble: 'standard deviations of each member model\'s score, averaged across members' }[model] || 'basis points of predicted relative return'}. ${model === 'ridge' || model === 'elastic_net' ? 'For linear models this decomposition is exact.' : model === 'momentum' ? 'The baseline uses one input by design.' : model === 'ensemble' ? 'Each member is explained separately, then combined.' : 'For tree models it is a local approximation that ignores interactions.'}</p>`);
 
     const past = detail.history[model] || [];
     document.getElementById('rank-legend').innerHTML = legend([{ label: 'Score percentile', color: modelColor(model) }]);
