@@ -2,60 +2,82 @@
 
 ## Research question
 
-At each monthly rebalance, AlphaCast ranks securities rather than claiming an exact future price. The evaluated outcome for security `i` on date `t` is:
+At each month-end AlphaCast ranks securities. It does not claim an exact future price. The evaluated outcome for security `i` on decision date `t` is
 
 ```text
-y(i, t) = R(i, t+1:t+20) - mean(R(j, t+1:t+20) for j in sector(i))
+y(i, t) = R(i, t+1 : t+20) - mean over j in sector(i) of R(j, t+1 : t+20)
 ```
 
-This is a 20-session forward **sector-relative excess return**. The holding-period return is unknown at the point a score is generated.
+the 20-session forward return in excess of the equal-weight return of the security's sector. It is unknown when the score is generated.
 
-## Inputs and quality gate
+## Data and quality gate
 
-The public-data path downloads adjusted close and volume history from Yahoo Finance. Before feature engineering, AlphaCast rejects missing required fields, duplicate `(date, ticker)` observations, non-positive prices, negative volumes, universes with fewer than ten securities, and histories shorter than 300 sessions. The data-quality record reports accepted tickers, historical coverage, and missing ticker-date cells.
+The default workspace uses a frozen Yahoo Finance snapshot of adjusted close and volume for 98 US large caps across all 11 GICS sectors, January 2014 to September 2026 (`scripts/refresh_snapshot.py` regenerates it). Runs can also download live Yahoo history for either declared universe or up to 150 custom tickers, or use a deterministic synthetic panel for method checks.
 
-The default live universe is deliberately listed in source with a sector mapping. Custom symbols request Yahoo sector metadata when available and otherwise remain explicitly `Unclassified`. That makes the selection rule inspectable, but it is not a historical index-membership file. The repository also provides a deterministic synthetic panel for repeatable tests and dashboard demonstration.
+Before any feature is built, AlphaCast:
 
-## Feature library
+- rejects missing columns, duplicate `(date, ticker)` rows, non-positive prices, negative volume, fewer than ten securities, and fewer than 300 sessions;
+- drops any session where fewer than 90% of securities have a price. Yahoo occasionally publishes a day for part of a universe, and a partial cross-section would distort every within-date rank and sector average. The count of dropped sessions is reported.
 
-All inputs are trailing-only:
+The universe is a hand-written list of today's large caps, not historical index membership. Every result therefore carries survivorship bias.
 
-- 21-, 63-, and 126-session returns;
-- 12-1 momentum: `P(t-21) / P(t-252) - 1`;
-- 20- and 60-session annualized volatility and 60-session downside volatility;
-- 252-session drawdown and distance from the rolling high;
-- 50/200 moving-average relationship;
-- 20-session dollar volume and relative volume;
-- 63-session market-relative and sector-relative return.
+## Features
 
-There are no point-in-time fundamental fields in this release. Those require a provider that can establish when a reported value was known.
+All 14 inputs use data through the decision close only:
 
-## Chronological validation and leakage control
+| Group | Features |
+|---|---|
+| Momentum | 1-, 3-, 6-month return; 12-1 momentum `P(t-21) / P(t-252) - 1`; 50/200-day moving-average spread |
+| Risk | 20- and 60-session annualised volatility; 60-session downside volatility; 12-month drawdown; distance from the 52-week high |
+| Liquidity | 20-session average dollar volume; volume relative to its 60-session average |
+| Relative | 3-month return minus the universe mean; 3-month return minus the sector mean |
 
-Folds are evaluated at the final available session of each month. Training expands over time. For a test decision date `t`, the latest training row is at most `t - 20` sessions, so its forward label ends before the test label begins. This 20-session embargo prevents overlapping target periods from crossing the training/test boundary.
+Models receive each feature as its **percentile rank within the date**, centred on zero. Raw levels drift over a decade (dollar volume grows; volatility regimes change), and a cross-sectional model can only use the ordering anyway.
 
-The portfolio return for a scored row is constructed only from its forward return after the score date. Rebalances use the previous holding set to calculate one-way turnover. The initial position is treated as the study's starting allocation and does not receive an arbitrary turnover charge.
+There are no fundamental features. They need a source that records when each value became public.
 
-## Comparable model suite
+## Validation and leakage control
 
-1. **Momentum:** 12-1 momentum ranking baseline.
-2. **Ridge:** standardized linear regression with L2 regularization.
-3. **Elastic Net:** standardized linear regression with combined L1/L2 regularization.
-4. **Random Forest:** deterministic ensemble with fixed seed, 40 trees, and a minimum leaf size of four.
+- **Folds.** One fold per calendar month-end with a realised label, taken from the full trading calendar. The final month in the sample, cut short because its labels are not yet realised, never becomes a fold.
+- **Expanding window with embargo.** For test date `t`, training uses labelled rows dated at most `t - 20` sessions, so no training label overlaps the test label. At least 504 sessions of training history are required before the first fold.
+- **Training sample.** Consecutive 20-session labels overlap by 19 sessions, so daily rows are close duplicates. Training keeps every fifth session, counted back from the embargo boundary. This is faster and nearer to independent observations.
+- **Refit cadence.** Models refit every third monthly fold and score the months in between with the most recent fit. A stale fit only uses older data, so it cannot leak.
+- **Label winsorisation.** Training labels are clipped at each date's 2.5th and 97.5th percentiles, so one takeover or earnings gap cannot dominate a squared-error fit. Evaluation always uses the unclipped outcome.
+- **Live signal.** After the walk-forward, each model is fitted on every label already realised and scores the latest complete session, whose outcome is unknown. No embargo is needed because no test label exists yet.
 
-Hyperparameters are declared in source; this release does not perform a separate nested hyperparameter search. The same fold sequence is used for every model.
+## Model suite
+
+All models see the same folds, features, and portfolio rule. Hyperparameters are declared in source; there is no search on test folds.
+
+1. **Momentum 12-1:** ranks by 12-1 momentum. Nothing is fitted. This is the baseline every model must beat.
+2. **Ridge:** standardised linear regression, L2 penalty `alpha = 10`.
+3. **Elastic Net:** standardised, `alpha = 0.0005`, `l1_ratio = 0.5`.
+4. **Random Forest:** 80 trees, depth 6, minimum leaf 100, half the features and half the rows per tree, fixed seed.
+5. **Gradient Boosting:** scikit-learn histogram gradient boosting, 150 iterations, learning rate 0.05, 15 leaves, minimum leaf 200, L2 = 1, fixed seed.
+
+## Attribution
+
+For a scored cross-section, the contribution of feature `k` to security `i` is the change in score when `k` is set to zero (the date median) and everything else is held fixed:
+
+```text
+c(i, k) = f(x_i) - f(x_i with x_ik = 0)
+```
+
+For the linear models this is exactly coefficient times centred rank. For the tree models it is a local approximation that ignores interactions. A model's **reliance** on a feature is its mean absolute contribution as a share of the total, which puts every model on the same scale. Reliance describes the model, not causality.
 
 ## Diagnostics
 
-- **Rank IC:** Spearman correlation between model score and realised sector-relative outcome for each test cross-section.
-- **IC information ratio:** mean Rank IC divided by its time-series standard deviation.
-- **Positive IC rate:** percentage of test dates with positive Rank IC.
-- **Q1 − Q5:** average realised relative return of the highest-scored quintile minus the lowest-scored quintile.
-- **Portfolio path:** gross and net return of an equal-weight top-ranked long-only sleeve versus the equal-weight universe.
-- **Costs:** one-way turnover times the declared transaction-cost basis points.
-- **Model monitoring:** the last six completed folds are compared with the full run to make deterioration visible rather than burying it in an average.
-- **Regime diagnostics:** each test date is assigned using its trailing 63-session market return and 20-session market volatility. The high/low volatility cutoff is the median calculated from that fold's training history only.
+- **Rank IC:** Spearman correlation between score and realised outcome in each fold. Reported as a mean, volatility, information ratio, t-statistic (`mean / (sd / sqrt(n))`), and share of positive months.
+- **Quintiles:** the average realised outcome of each score quintile; Q1 − Q5 spread; how often all five are in order.
+- **Portfolio:** an equal-weight long-only sleeve of the top 15 names, held for 20 sessions. One-way turnover times the declared basis-point cost is subtracted. Benchmark: the equal-weight universe over the same periods. The first period is treated as the starting allocation and is not charged.
+- **Regimes:** each test date is labelled with trailing information only. The 63-session universe return sets expansion or contraction. 20-session universe volatility above the training window's median sets high volatility.
+
+## Monitoring
+
+- **Model health:** the mean Rank IC of the last six folds against the full sample. **Degraded** if the recent mean is negative; **watch** if it sits more than one standard error (full-sample IC s.d. / sqrt(6)) below the full-sample mean; otherwise **healthy**.
+- **Reliance drift:** the share of attribution per feature over the last six folds against the full history.
+- **Feature drift:** population stability index of raw feature values, last 63 sessions against all earlier history, using deciles of the reference. Under 0.10 stable, 0.10 to 0.25 moderate, above 0.25 shifted. Models see within-date ranks, so raw drift does not reach them directly, but it signals a market unlike most of the training data.
 
 ## Interpretation
 
-A positive result in one historical universe is only a prompt for more research. It does not establish alpha, capacity, implementability, or a forecast. The strongest practical test is whether a more complex model adds stable out-of-sample ranking information beyond momentum after realistic data, costs, constraints, and further held-out evaluation.
+A positive result in one historical universe prompts more research; it does not establish alpha, capacity, or a forecast. The meaningful test is whether a model adds stable out-of-sample ranking information beyond momentum after costs. That test should be repeated on point-in-time constituents, with fundamentals and a realistic execution model, before any stronger claim.

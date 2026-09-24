@@ -25,10 +25,11 @@ US_LARGE_CAP: dict[str, str] = {
     ticker: sector for sector, tickers in _US_LARGE_CAP.items() for ticker in tickers.split()
 }
 
-STARTER_30 = (
-    "AAPL ADBE AVGO CRM MSFT NVDA AMZN HD MCD NKE GOOGL META NFLX JPM BAC GS MS "
-    "UNH JNJ LLY PFE XOM CVX SLB COST WMT PG CAT HON GE"
-).split()
+STARTER_30 = [
+    "AAPL", "ADBE", "AVGO", "CRM", "MSFT", "NVDA", "AMZN", "HD", "MCD", "NKE",
+    "GOOGL", "META", "NFLX", "JPM", "BAC", "GS", "MS", "UNH", "JNJ", "LLY",
+    "PFE", "XOM", "CVX", "SLB", "COST", "WMT", "PG", "CAT", "HON", "GE",
+]
 
 UNIVERSES: dict[str, dict[str, object]] = {
     "us_large_cap": {

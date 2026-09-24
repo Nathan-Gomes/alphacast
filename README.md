@@ -1,77 +1,104 @@
 # AlphaCast
 
-**Systematic equity research application for testing cross-sectional stock rankings.**
+**A machine-learning equity ranking workstation: walk-forward validation, live signals, portfolio construction, and model monitoring.**
 
-AlphaCast asks one focused question:
+[Launch AlphaCast](https://alphacast.onrender.com) · [Read the case study](https://www.nathan-gomes.com/Project-AlphaCast.dc.html) · [Methodology](docs/METHODOLOGY.md)
 
-> Can information available at a rebalance date rank securities by their sector-relative performance over the next 20 trading sessions?
+![AlphaCast overview](docs/assets/overview.png)
 
-It is not a price-target tool, an automated trading system, or investment advice. It is a reproducible research application that makes the data, timing rules, model comparisons, portfolio accounting, and limitations visible together.
+AlphaCast asks one question:
 
-## What is implemented
+> Using only information available at a month-end close, can a model rank stocks by how they will perform against their own sector over the next 20 trading sessions?
+
+It ranks. It does not forecast prices, place trades, or give investment advice.
+
+## What it does
+
+| View | Purpose |
+|---|---|
+| **Overview** | Latest signal, active model's out-of-sample record and health, generated read-out, top and bottom ranks |
+| **Screener** | Full cross-section with score percentile, model output, rank change and factor profile; search, filter, CSV export |
+| **Security** | Per-feature attribution, price path, rank history against realised outcomes, rank under every model |
+| **Portfolio** | Top-ranked sleeve at the latest close: weights, entries and exits, implied turnover and cost, sector tilts |
+| **Backtest** | Net and gross growth, drawdown, rolling active return, turnover, period table |
+| **Models** | All models on identical folds: IC, t-stat, Sharpe, turnover, cumulative IC, feature reliance |
+| **Diagnostics** | Monthly Rank IC, quintile returns, IC distribution, regime breakdown |
+| **Monitoring** | Health status per model, rolling IC against a historical band, reliance drift, feature drift (PSI) |
+| **Runs** | Start new studies in the background (frozen snapshot, live Yahoo Finance, or synthetic), switch workspaces, export JSON |
+
+![Security view](docs/assets/security.png)
+
+## Findings on the default workspace
+
+98 US large caps, 114 monthly out-of-sample folds from February 2017 to July 2026, 10 bps one-way costs, equal-weight top 15:
+
+| Model | Mean Rank IC | t-stat | Net Sharpe | Turnover / month |
+|---|---:|---:|---:|---:|
+| Random Forest | 0.024 | 2.41 | 1.24 | 41% |
+| Gradient Boosting | 0.010 | 0.97 | 1.06 | 57% |
+| Elastic Net | 0.010 | 0.80 | 0.90 | 35% |
+| Ridge | 0.010 | 0.75 | 0.80 | 46% |
+| Momentum 12-1 (baseline) | 0.006 | 0.37 | 1.22 | 25% |
+| Equal-weight universe | | | 1.09 | |
+
+Random Forest is the only model with a mean IC statistically distinguishable from zero. The other models do not clearly beat momentum after turnover. As of the September 2026 signal, every model's last six folds sit below its long-run record, and the monitoring view flags all five as degraded. The signal is modest and it is not stationary.
+
+## How it works
 
 ```text
-Yahoo Finance or deterministic synthetic panel
--> data-quality checks
--> trailing price / volume features
--> sector-relative 20-session forward target
--> expanding walk-forward folds with a 20-session embargo
--> Momentum / Ridge / Elastic Net / Random Forest rankings
--> quintile diagnostics and a cost-aware top-ranked portfolio
--> API, local dashboard, exportable JSON run record
+Daily adjusted prices and volume (98 stocks, 2014-2026)
+-> data-quality gate (drops sessions with <90% coverage)
+-> 14 trailing features, rank-normalised within each date
+-> target: next 20-session return minus the stock's sector return
+-> monthly expanding-window folds, 20-session embargo
+-> Momentum · Ridge · Elastic Net · Random Forest · Gradient Boosting
+-> Rank IC, quintiles, top-15 sleeve net of costs, regimes
+-> live scoring of the latest close, attribution, drift and health checks
 ```
 
-- **Data:** Yahoo Finance adjusted close and volume history for a transparent starter universe, or a deterministic synthetic panel for repeatable demonstration and test runs.
-- **Features:** 1-, 3-, and 6-month return; 12-1 momentum; realized and downside volatility; drawdown; distance from 52-week high; moving-average relationship; dollar volume; volume change; market-relative and sector-relative momentum.
-- **Validation:** monthly expanding-window evaluation; every target begins after its decision date; the final 20 labelled sessions of training are embargoed to prevent overlap with test labels.
-- **Models:** a declared momentum baseline, Ridge, Elastic Net, and Random Forest. Every model sees the identical train/test sequence; the slower tree model is opt-in in the dashboard.
-- **Evaluation:** mean Rank IC, IC information ratio, percentage of positive IC periods, Q1-minus-Q5 spread, gross/net portfolio return, turnover, cost drag, and historical net growth.
-- **Portfolio:** equal-weight top-ranked long-only sleeve, with one-way turnover and declared basis-point transaction costs. Results are compared to the equal-weight universe over the same realised holding periods.
-- **Dashboard:** configuration form, run metadata, model table, recent model-health monitoring, train-only regime diagnostics, equity-path comparison, feature importance, and the last evaluated historical ranking.
+- **Leakage control:** features use data through the decision close; labels start the next session; training stops 20 sessions before each test date.
+- **Training efficiency:** training rows are sampled weekly (consecutive 20-day labels overlap by 19 days) and models refit every third month. A stale fit only uses older data, so it cannot leak.
+- **Attribution:** score change when a feature is set to the date's median. Exact for linear models; a local approximation for trees.
+
+See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) for equations and design choices.
 
 ## Run locally
 
 ```bash
 python -m venv .venv
 .venv/bin/pip install -e '.[dev]'
-.venv/bin/python -m uvicorn alphacast.app:app --reload
+.venv/bin/uvicorn alphacast.app:app --reload
 ```
 
-Open `http://127.0.0.1:8000`.
-
-The dashboard defaults to deterministic synthetic data so the first click is reproducible. Choose **Yahoo Finance history** to run the same workflow against supplied symbols. Yahoo requests need at least ten tickers; the prefilled starter universe has a documented sector mapping, and custom symbols attempt Yahoo sector resolution with an explicit `Unclassified` fallback.
-
-## Command-line runs
+Open `http://127.0.0.1:8000`. The default workspace loads from `src/alphacast/snapshots/default_run.json.gz`. The API reference is at `/api/docs`.
 
 ```bash
-# A deterministic, reviewable output record
-.venv/bin/alphacast --source synthetic --output output/synthetic-run.json
-
-# A live-data study using the transparent default universe
-.venv/bin/alphacast --source yahoo --start 2017-01-01 --models momentum,ridge \
-  --output output/yahoo-run.json
+.venv/bin/python -m pytest                      # test suite
+.venv/bin/python scripts/build_default_run.py   # rebuild the default workspace (~80 s)
+.venv/bin/python scripts/refresh_snapshot.py    # re-download the frozen price snapshot
+.venv/bin/alphacast --source snapshot --output output/run.json   # CLI run
 ```
 
-`output/` is intentionally ignored by Git. A run record depends on its download date, universe, source availability, and declared configuration; it should be generated rather than committed as permanent evidence.
+## API
 
-## Research safeguards
-
-At decision date `t`, every feature uses observations through `t`. The evaluated target is the compounded return from `t + 1` through `t + 20`, less the equal-weight return of that security's sector over the same sessions. The training boundary is moved back by 20 sessions, so its final target cannot overlap the test target.
-
-The model score is evaluated as a **rank**, not an exact-return forecast. A model only earns a stronger conclusion if it improves out-of-sample ranking diagnostics and remains useful after turnover and transaction costs compared with the momentum baseline.
-
-The dashboard also compares each model's latest six folds with its complete run, and breaks results into expansion/contraction and high/low-volatility regimes. Regimes use only trailing market information available before each evaluated date; they are diagnostics for investigation, not an invitation to tune a model after seeing results.
+| Method | Path | |
+|---|---|---|
+| GET | `/api/catalog` | Universes, models, data sources, defaults |
+| GET | `/api/runs` | Runs in memory with status and progress |
+| POST | `/api/runs` | Start a run in the background (returns 202) |
+| GET | `/api/runs/{id}` | Run status and, once complete, the workspace |
+| GET | `/api/runs/{id}/securities/{ticker}` | Price path, rank history, attribution for one stock |
+| GET | `/api/runs/{id}/export` | Download the workspace as JSON |
 
 ## Limits
 
-- Yahoo Finance is convenient public history, not an institutional point-in-time data source.
-- The starter universe is manually declared and can carry selection and survivorship bias.
-- There are no point-in-time fundamentals, delisting returns, borrow costs, taxes, bid/ask spreads, or execution-quality estimates in this release.
-- The top-ranked sleeve is a transparent research construction, not a production portfolio optimizer.
+- The universe is today's large caps, not point-in-time index membership, so results carry survivorship bias.
+- Yahoo Finance is convenient public history, not an institutional point-in-time source.
+- There are no fundamentals, delisting returns, borrow costs, taxes, or spread and impact model.
+- The portfolio is an equal-weight sleeve with no sector constraints or optimizer.
+- Runs live in server memory and reset when the service restarts.
 - Historical results do not establish future returns.
-
-These are research limitations to address, not qualifications to hide. See [the methodology](docs/METHODOLOGY.md) for the equations and design decisions.
 
 ## Deploy
 
-The repository includes a `Dockerfile` and `render.yaml` for a Render web service. The health endpoint is `/api/health`. The application has no authentication by design for a public portfolio demonstration; do not use it with proprietary data or credentials.
+`Dockerfile` and `render.yaml` define a Render web service; the health check is `/api/health`. The public demo has no authentication. Do not use it with proprietary data.

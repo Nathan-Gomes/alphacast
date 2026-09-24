@@ -30,8 +30,10 @@ Progress = Callable[[float, str], None]
 LIMITS = [
     "Historical walk-forward research. Nothing here is an investment recommendation.",
     "Yahoo Finance history is convenient, not a point-in-time institutional data source.",
-    "Universes are today's constituents written down by hand, so results carry "
-    "survivorship bias.",
+    (
+        "Universes are today's constituents written down by hand, so results carry "
+        "survivorship bias."
+    ),
     "No fundamentals, delisting returns, borrow costs, taxes, or spread and impact model.",
     "The portfolio is an equal-weight top-ranked sleeve, not an optimizer or execution model.",
 ]

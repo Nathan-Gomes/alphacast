@@ -354,7 +354,8 @@ tr.selected td { background: var(--accent-soft); }
   .toolbar .field.compact select { width: 100%; max-width: none; }
   .toolbar .button span { display: none; }
   .view { padding: 16px 16px 48px; }
-  .context-bar { padding: 8px 16px; }
+  .context-bar { padding: 8px 16px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .context-bar::-webkit-scrollbar { display: none; }
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .filters input[type="search"] { width: 100%; }
   .sec-head .picker { margin-left: 0; width: 100%; }
