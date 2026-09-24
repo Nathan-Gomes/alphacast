@@ -34,6 +34,8 @@ export default {
     const profile = index.profiles[ticker];
     const live = index.live[model].find((row) => row.ticker === ticker);
     const total = index.live[model].length;
+    const sectorPeers = index.live[model].filter((row) => row.sector === profile.sector).sort((a, b) => a.rank - b.rank);
+    const sectorRank = sectorPeers.findIndex((row) => row.ticker === ticker) + 1;
 
     ctx.el.innerHTML = html`
       <div class="sec-head">
@@ -45,7 +47,7 @@ export default {
         </label>
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="label">Rank · ${index.labels[model]}</div><div class="value">${live.rank} <span class="muted" style="font-size:14px">/ ${total}</span></div><div class="sub">Quintile Q${live.quintile}</div></div>
+        <div class="kpi"><div class="label">Rank · ${index.labels[model]}</div><div class="value">${live.rank} <span class="muted" style="font-size:14px">/ ${total}</span></div><div class="sub">Q${live.quintile} · ${sectorRank} of ${sectorPeers.length} in ${profile.sector}</div></div>
         <div class="kpi"><div class="label">${raw(term('percentile'))}</div><div class="value">${num(live.percentile, 0)}</div><div class="sub">${isNum(live.previous_rank) ? `Rank ${live.previous_rank} at last rebalance` : 'Unranked at last rebalance'}</div></div>
         <div class="kpi"><div class="label">Model output</div><div class="value ${toneClass(live.predicted_relative_return)}">${model === 'momentum' ? '—' : pct(live.predicted_relative_return, 2, { sign: true })}</div><div class="sub">${model === 'ensemble' ? 'Average rank of the member models' : 'Predicted 20-session return vs sector'}</div></div>
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${live.in_portfolio ? 'Held' : 'Not held'}</div><div class="sub">${live.in_portfolio ? `${pct(live.weight, 1)} weight${live.was_held ? '' : ' · entering'}` : live.was_held ? 'Exiting at this signal' : `Top ${index.ws.config.top_n} are held`}</div></div>
