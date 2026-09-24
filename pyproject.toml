@@ -31,3 +31,6 @@ line-length = 100
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+alphacast = ["web/*.html", "web/*.js", "web/*.css"]
