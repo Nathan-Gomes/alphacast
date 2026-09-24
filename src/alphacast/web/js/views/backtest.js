@@ -174,6 +174,7 @@ export default {
       values: years.map((row) => row.active), height: 200,
       colors: years.map((row) => (row.active >= 0 ? 'var(--pos)' : 'var(--neg)')),
       yFormat: (value) => pct(value, 0), label: 'Active return over the universe by calendar year',
+      compactLabel: (text) => `'${text.slice(2)}`,
       tooltipRows: (i) => [
         { label: 'Sleeve, net', value: pct(years[i].net, 1) },
         { label: 'Universe', value: pct(years[i].bench, 1) },

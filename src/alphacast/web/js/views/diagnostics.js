@@ -65,6 +65,7 @@ export default {
       labels: edges.slice(0, -1).map((lo) => (Math.abs(lo) < 1e-9 ? '0' : lo.toFixed(2).replace('0.', '.'))),
       values: counts, colors: edges.slice(0, -1).map((lo) => (lo >= 0 ? color : 'var(--neg)')),
       yFormat: (value) => String(Math.round(value)), label: 'Histogram of monthly Rank IC',
+      compactLabel: (text, index) => (index % 2 ? '' : text),
       tooltipRows: (i) => [{ label: 'Range', value: `${edges[i].toFixed(2)} to ${edges[i + 1].toFixed(2)}` }, { label: 'Months', value: String(counts[i]) }],
     });
     const decay = index.ws.decay || [];

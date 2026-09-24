@@ -263,7 +263,7 @@ export function columnChart(container, {
 /** Vertical bars for a handful of categories, e.g. quintiles. */
 export function categoryBars(container, {
   labels, values, colors, height = 230, yFormat = (value) => value.toFixed(2), label = 'Bar chart',
-  tooltipRows = null,
+  tooltipRows = null, compactLabel = null,
 }) {
   const { svg, width } = frame(container, height, label);
   const margin = { top: 16, right: 14, bottom: 30, left: 54 };
@@ -278,12 +278,16 @@ export function categoryBars(container, {
   const scaleY = (value) => bottom - ((value - lo) / (hi - lo || 1)) * (bottom - margin.top);
   const zero = scaleY(0);
   let body = yAxis(ticks, scaleY, margin.left, right, yFormat);
+  // Narrow bars drop their value labels (the tooltip still has them) and may shorten
+  // category labels, so nothing collides on a phone.
+  const roomy = slot >= 44;
+  const categoryText = (text, index) => (!roomy && compactLabel ? compactLabel(text, index) : text);
   body += values.map((value, index) => {
     const x = margin.left + slot * index + (slot - barWidth) / 2;
     const y = Math.min(zero, scaleY(value));
     return `<rect x="${x}" y="${y}" width="${barWidth}" height="${Math.max(1, Math.abs(scaleY(value) - zero))}" rx="3" fill="${colors ? colors[index] : 'var(--series-1)'}"/>
-      <text x="${x + barWidth / 2}" y="${value >= 0 ? y - 5 : y + Math.abs(scaleY(value) - zero) + 13}" text-anchor="middle" style="fill:var(--ink)">${escapeHtml(yFormat(value))}</text>
-      <text x="${x + barWidth / 2}" y="${bottom + 18}" text-anchor="middle">${escapeHtml(labels[index])}</text>
+      ${roomy ? `<text x="${x + barWidth / 2}" y="${value >= 0 ? y - 5 : y + Math.abs(scaleY(value) - zero) + 13}" text-anchor="middle" style="fill:var(--ink)">${escapeHtml(yFormat(value))}</text>` : ''}
+      <text x="${x + barWidth / 2}" y="${bottom + 18}" text-anchor="middle">${escapeHtml(categoryText(labels[index], index))}</text>
       <rect class="hit" data-index="${index}" x="${margin.left + slot * index}" y="${margin.top}" width="${slot}" height="${bottom - margin.top}"/>`;
   }).join('');
   body += `<line class="axis-line" x1="${margin.left}" x2="${right}" y1="${zero}" y2="${zero}"/>`;
