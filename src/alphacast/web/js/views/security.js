@@ -59,9 +59,26 @@ export default {
           ${raw(panel({ title: 'Factor profile', note: 'Cross-sectional percentiles today (100 = strongest).', body: '<div id="factors"></div>' }))}
         </div>
       </div>
-      <div class="section-gap">${raw(panel({ title: 'Feature values', note: 'Raw trailing inputs at the signal date and where they sit in the universe.', body: '<div class="table-wrap" id="features"></div>', flush: false }))}</div>`;
+      <div class="grid cols-main section-gap">
+        ${raw(panel({ title: 'Feature values', note: 'Raw trailing inputs at the signal date and where they sit in the universe.', body: '<div class="table-wrap" id="features"></div>', flush: false }))}
+        ${raw(panel({ title: `Sector peers`, note: `${profile.sector}, ranked by ${index.labels[model]}. The target is sector-relative, so this is the comparison that counts.`, body: '<div class="table-wrap" id="peers"></div>', flush: true }))}
+      </div>`;
 
     bindStars(ctx.el.querySelector('.sec-head'));
+    const peers = liveRows(index, model).filter((row) => row.sector === profile.sector);
+    dataTable(document.getElementById('peers'), {
+      rows: peers, sortKey: 'rank', sortDir: 'asc',
+      rowClass: (row) => (row.ticker === ticker ? 'selected' : ''),
+      onRowClick: (row) => { if (row.ticker !== ticker) ctx.navigate(`#/security/${row.ticker}`); },
+      columns: [
+        { key: 'rank', label: 'Rank', num: true },
+        { key: 'ticker', label: 'Ticker', render: (row) => html`<span class="ticker">${row.ticker}</span>` },
+        { key: 'percentile', label: 'Score pct.', num: true, render: (row) => num(row.percentile, 0) },
+        { key: 'return_63', label: '3M', num: true, render: (row) => html`<span class="${toneClass(row.return_63)}">${pct(row.return_63, 1, { sign: true })}</span>` },
+        { key: 'in_portfolio', label: 'Held', num: true, sort: (row) => (row.in_portfolio ? 1 : 0), render: (row) => (row.in_portfolio ? '<span class="tag">Held</span>' : '') },
+      ],
+    });
+
     const picker = document.getElementById('picker');
     picker.addEventListener('change', () => {
       const value = picker.value.trim().toUpperCase();
