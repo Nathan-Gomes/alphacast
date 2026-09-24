@@ -53,7 +53,7 @@ export default {
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${live.in_portfolio ? 'Held' : 'Not held'}</div><div class="sub">${live.in_portfolio ? `${pct(live.weight, 1)} weight${live.was_held ? '' : ' · entering'}` : live.was_held ? 'Exiting at this signal' : `Top ${index.ws.config.top_n} are held`}</div></div>
       </div>
       <div class="grid cols-2">
-        ${raw(panel({ title: 'Price', note: 'Weekly adjusted close.', body: '<div id="price"></div>' }))}
+        ${raw(panel({ title: 'Price', note: 'Weekly adjusted close.', body: '<div id="price"></div><p class="note" id="price-note"></p>' }))}
         ${raw(panel({ title: 'Why it ranks here', note: 'Score change when each feature is set to today\'s cross-sectional median. Positive pushes the rank up.', body: '<div id="attribution"><div class="skeleton" style="height:220px"></div></div>' }))}
       </div>
       <div class="grid cols-2 section-gap">
@@ -113,8 +113,26 @@ export default {
     }
     if (lastTicker !== ticker || !document.getElementById('price')) return;
 
+    // Held spans: from each rebalance where the model held the stock to the next one.
+    const heldRows = (detail.history[model] || []);
+    const weekIndex = (day) => {
+      const i = detail.prices.dates.findIndex((d) => d >= day);
+      return i === -1 ? detail.prices.dates.length - 1 : i;
+    };
+    const regions = [];
+    heldRows.forEach((row, i) => {
+      if (!row.held) return;
+      const start = weekIndex(row.date);
+      const end = heldRows[i + 1] ? weekIndex(heldRows[i + 1].date) : Math.min(start + 4, detail.prices.dates.length - 1);
+      const last = regions.at(-1);
+      if (last && last.end >= start) last.end = end; else regions.push({ start, end, color: modelColor(model) });
+    });
+    const heldMonths = heldRows.filter((row) => row.held).length;
+    document.getElementById('price-note').textContent = heldMonths
+      ? `Shaded: the ${heldMonths} month${heldMonths === 1 ? '' : 's'} ${index.labels[model]} held ${ticker} in its top ${index.ws.config.top_n}.`
+      : `${index.labels[model]} never held ${ticker} in the walk-forward test.`;
     lineChart(document.getElementById('price'), {
-      dates: detail.prices.dates,
+      dates: detail.prices.dates, regions,
       series: [{ label: ticker, color: 'var(--series-1)', values: detail.prices.close, area: true }],
       height: 250, yFormat: (value) => `$${value >= 1000 ? value.toFixed(0) : value.toFixed(value >= 100 ? 0 : 2)}`,
       tooltipFormat: (value) => money(value), label: `${ticker} weekly adjusted close`,

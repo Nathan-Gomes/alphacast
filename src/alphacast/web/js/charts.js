@@ -133,7 +133,7 @@ export function legend(items) {
  */
 export function lineChart(container, {
   dates, series, height = 260, yFormat = (value) => value.toFixed(2), baseline = null,
-  band = null, label = 'Line chart', tooltipFormat = yFormat, markers = null, xFormat = null,
+  band = null, label = 'Line chart', tooltipFormat = yFormat, markers = null, xFormat = null, regions = null,
 }) {
   const { svg, width } = frame(container, height, label);
   const margin = { top: 12, right: 14, bottom: 28, left: 54 };
@@ -152,6 +152,10 @@ export function lineChart(container, {
   body += `<line class="axis-line" x1="${margin.left}" x2="${right}" y1="${bottom}" y2="${bottom}"/>`;
   if (baseline !== null) {
     body += `<line x1="${margin.left}" x2="${right}" y1="${scaleY(baseline)}" y2="${scaleY(baseline)}" stroke="var(--axis)" stroke-width="1.2"/>`;
+  }
+  if (regions) {
+    // Shaded spans of x indices, e.g. periods a stock was held.
+    body += regions.map(({ start, end, color }) => `<rect x="${scaleX(start).toFixed(1)}" y="${margin.top}" width="${Math.max(1, scaleX(end) - scaleX(start)).toFixed(1)}" height="${bottom - margin.top}" fill="${color}" opacity="0.14"/>`).join('');
   }
   if (band) {
     const upper = band.upper.map((value, index) => `${index ? 'L' : 'M'}${scaleX(index).toFixed(1)},${scaleY(value).toFixed(1)}`).join('');
