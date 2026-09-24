@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field, field_validator
 from . import __version__
 from .config import MODEL_LABELS, SUPPORTED_MODELS, ResearchConfig
 from .features import FEATURE_LABELS
-from .runs import DEFAULT_RUN_ID, RunRegistry, RunRequest, execute
-from .universe import DEFAULT_UNIVERSE, UNIVERSES
+from .runs import DEFAULT_RUN_ID, RunRegistry, RunRequest
+from .universe import UNIVERSES
 
 WEB_DIRECTORY = Path(__file__).with_name("web")
 MAX_TICKERS = 150
@@ -162,47 +162,6 @@ def get_security(run_id: str, ticker: str) -> dict[str, object]:
     if detail is None:
         raise HTTPException(404, f"{ticker.upper()} is not in this run.")
     return {"ticker": ticker.upper(), **detail}
-
-
-@app.get("/api/universe", include_in_schema=False)
-def legacy_universe() -> dict[str, object]:
-    """Kept for the original single-page interface."""
-    return {"tickers": DEFAULT_UNIVERSE, "count": len(DEFAULT_UNIVERSE)}
-
-
-@app.post("/api/research", include_in_schema=False)
-def legacy_research(payload: dict) -> dict[str, object]:
-    """Synchronous run kept for the original single-page interface."""
-    source = payload.get("source", "synthetic")
-    tickers = [str(t).upper().strip() for t in payload.get("tickers", []) if str(t).strip()]
-    models = tuple(payload.get("models") or SUPPORTED_MODELS)
-    if set(models) - set(SUPPORTED_MODELS) or not models:
-        raise HTTPException(422, "Select supported models.")
-    config = ResearchConfig(
-        start=payload.get("start", "2017-01-01"),
-        end=payload.get("end", datetime.now(timezone.utc).date().isoformat()),
-        models=models,
-        top_n=int(payload.get("top_n", 10)),
-        transaction_cost_bps=float(payload.get("transaction_cost_bps", 10.0)),
-    )
-    universe = "custom" if source == "yahoo" else "us_large_cap"
-    if source == "yahoo" and len(tickers) < 10:
-        raise HTTPException(422, "Yahoo studies need at least ten tickers.")
-    request = RunRequest(source if source == "yahoo" else "synthetic", tickers, universe, config, "legacy")
-    try:
-        workspace, _ = execute(request)
-    except (RuntimeError, ValueError) as exc:
-        raise HTTPException(422, str(exc)) from exc
-    model_ids = [row["model"] for row in workspace["summaries"]]
-    last = workspace["last_rebalance"]
-    return {
-        **workspace,
-        "latest_rankings": [
-            {**row, "date": last, "momentum_12_1": None, "volatility_20": None}
-            for row in workspace["live"]
-            if row["model"] in model_ids
-        ],
-    }
 
 
 @app.get("/api/runs/{run_id}/export")
