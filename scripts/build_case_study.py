@@ -233,6 +233,23 @@ def main(output: Path) -> None:
         )
     sector_html = "".join(sector_parts)
     top_sector = sector_rows[0] if sector_rows else None
+    decay = ws.get("decay", [])
+    horizons = sorted({row["horizon"] for row in decay})
+    decay_models = [m for m in ("random_forest", "ensemble", "momentum") if m in summaries]
+    decay_series = [
+        {
+            "label": LABELS[m], "color": COLORS[m], "width": 2.4 if m == "random_forest" else 1.6,
+            "values": [next(r["mean_rank_ic"] for r in decay if r["model"] == m and r["horizon"] == h) for h in horizons],
+            "end": "",
+        }
+        for m in decay_models
+    ] if horizons else []
+    decay_svg = line_chart(
+        decay_series, [str(h) for h in horizons], y_format=lambda v: f"{v:.3f}", baseline=0,
+        label="Mean Rank IC by forward horizon for Random Forest, the ensemble and momentum",
+        x_ticks=[(i, f"{h} sessions") for i, h in enumerate(horizons)],
+    ) if horizons else ""
+    rf_decay = {r["horizon"]: r["mean_rank_ic"] for r in decay if r["model"] == "random_forest"}
     tests = _test_count()
 
     template = (ROOT / "scripts" / "case_study_template.html").read_text()
@@ -283,6 +300,10 @@ def main(output: Path) -> None:
         top_sector=top_sector["sector"] if top_sector else "",
         top_sector_weight=pct(top_sector["mean_active_weight"], 1, sign=True) if top_sector else "",
         tests=tests,
+        decay_svg=decay_svg,
+        decay_legend=legend(decay_series) if decay_series else "",
+        rf_ic10=f"{rf_decay.get(10, float('nan')):.3f}",
+        rf_ic60=f"{rf_decay.get(60, float('nan')):.3f}",
         ens_ic=f"{summaries['ensemble']['mean_rank_ic']:.3f}" if "ensemble" in summaries else "n/a",
         ens_t=f"{summaries['ensemble']['ic_t_stat']:.1f}" if "ensemble" in summaries else "n/a",
         ens_sharpe=f"{summaries['ensemble']['net_sharpe']:.2f}" if "ensemble" in summaries else "n/a",

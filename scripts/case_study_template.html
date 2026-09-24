@@ -218,6 +218,12 @@
         </div>
       </div>
       <div class="readout"><b>Most of the edge comes from volatile markets.</b> In calm expansions, the most common state, the ranking was indistinguishable from random. The last six folds average an IC of {rf_recent}, which is why the monitoring view flags the model as degraded going into the {signal} signal.</div>
+      <div class="chart-card">
+        <p class="eyebrow" style="color:var(--muted)">Rank IC by forward horizon</p>
+        {decay_svg}
+        {decay_legend}
+      </div>
+      <div class="readout"><b>The signal is slower than the horizon it was trained for.</b> Scored against longer windows, Random Forest's IC does not fade: {rf_ic10} at 10 sessions and {rf_ic60} at 60, against {rf_ic} at 20. A slower rebalance could keep most of the ranking skill with less turnover, a test for the next iteration rather than a conclusion, since longer windows overlap more and carry fewer independent observations.</div>
     </section>
 
     <section id="costs" style="padding:80px 0 0">
@@ -284,7 +290,7 @@
         <div>
           <p class="eyebrow">Next research iteration</p>
           <h2>Strengthen the data before expanding the claim</h2>
-          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, sector-constrained optimisation, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
+          <p class="lede">Point-in-time constituents to remove survivorship bias, point-in-time fundamentals, a slower rebalance where the decay analysis suggests the signal lasts, and a spread and impact cost model. Each goes through the same chronological validation before it can support a stronger conclusion.</p>
         </div>
       </div>
     </section>
