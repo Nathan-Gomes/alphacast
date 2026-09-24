@@ -6,39 +6,32 @@ import { dataTable } from '../table.js';
 import { consensusCell, pctBar, rankChange, statusBadge, tickerLink } from './parts.js';
 import { bindStars, starButton, watchlist } from '../watchlist.js';
 
+/** The research read-out as short labelled points: [label, text]. */
 function verdict(index, model) {
   const leader = leadingModel(index);
   const best = index.summaries[leader];
   const baseline = index.summaries.momentum;
-  const active = index.summaries[model];
   const health = index.monitoring[model];
-  const sentences = [];
-  sentences.push(`${index.labels[leader]} has the strongest out-of-sample ranking signal: mean Rank IC ${num(best.mean_rank_ic, 3)} (t = ${num(best.ic_t_stat, 1)}, p = ${num(best.p_value, 3)}), positive in ${pct(best.positive_ic_rate, 0)} of ${best.folds} months.`);
+  const ensemble = index.summaries.ensemble;
+  const points = [];
+  points.push(['Signal', `${index.labels[leader]} ranks best: mean Rank IC ${num(best.mean_rank_ic, 3)}, positive in ${pct(best.positive_ic_rate, 0)} of ${best.folds} months.`]);
   if (Number.isFinite(best.p_value_holm) && index.models.length > 1) {
-    sentences.push(best.p_value_holm < 0.05
-      ? `That survives adjustment for comparing ${index.models.length} models (Holm p = ${num(best.p_value_holm, 3)}).`
-      : `After adjusting for comparing ${index.models.length} models, the evidence is suggestive rather than conclusive (Holm p = ${num(best.p_value_holm, 2)}).`);
+    points.push(['Evidence', best.p_value_holm < 0.05
+      ? `Significant after adjusting for ${index.models.length} models (t = ${num(best.ic_t_stat, 1)}, Holm p = ${num(best.p_value_holm, 3)}).`
+      : `Suggestive, not conclusive: t = ${num(best.ic_t_stat, 1)}, but Holm p = ${num(best.p_value_holm, 2)} across ${index.models.length} models.${ensemble && leader !== 'ensemble' ? ` The ensemble fixed in advance reaches IC ${num(ensemble.mean_rank_ic, 3)}.` : ''}`]);
   }
   if (baseline && leader !== 'momentum') {
-    const edge = best.mean_rank_ic - baseline.mean_rank_ic;
-    sentences.push(edge > 0
-      ? `It beats the 12-1 momentum baseline by ${num(edge, 3)} IC before costs; after ${index.ws.config.transaction_cost_bps} bps costs and ${pct(best.mean_turnover, 0)} average monthly turnover, its net Sharpe is ${num(best.net_sharpe, 2)} against ${num(baseline.net_sharpe, 2)} for momentum.`
-      : 'It does not beat the 12-1 momentum baseline, which is the honest bar every model must clear.');
+    points.push(['After costs', `Net Sharpe ${num(best.net_sharpe, 2)} against ${num(baseline.net_sharpe, 2)} for momentum and ${num(best.benchmark_sharpe, 2)} for the universe, at ${pct(best.mean_turnover, 0)} monthly turnover.`]);
   }
   if (Number.isFinite(best.beta)) {
-    sentences.push(`Its sleeve has a beta of ${num(best.beta, 2)} to the universe, so part of its return is market exposure; the alpha that remains is ${pct(best.alpha_annualized, 1)} a year (t = ${num(best.alpha_t_stat, 1)}).`);
+    points.push(['Exposure', `Beta ${num(best.beta, 2)} to the universe; alpha after that is ${pct(best.alpha_annualized, 1)} a year (t = ${num(best.alpha_t_stat, 1)}).`]);
   }
-  const ensemble = index.summaries.ensemble;
-  if (ensemble && leader !== 'ensemble') {
-    sentences.push(`Because ${index.labels[leader]} was singled out after seeing every result, the ensemble fixed in advance is the fairer yardstick: IC ${num(ensemble.mean_rank_ic, 3)} (t = ${num(ensemble.ic_t_stat, 1)}), net Sharpe ${num(ensemble.net_sharpe, 2)}.`);
-  }
-  sentences.push(`The equal-weight universe returned a Sharpe of ${num(active.benchmark_sharpe, 2)} over the same periods.`);
   if (health) {
-    sentences.push(health.status === 'healthy'
-      ? `${index.labels[model]} is currently healthy: its last ${health.window_folds} folds are in line with its history.`
-      : `${index.labels[model]} is flagged ${health.status}: recent Rank IC ${num(health.recent_mean_rank_ic, 3)} against ${num(health.historical_mean_rank_ic, 3)} historically.`);
+    points.push(['Health', health.status === 'healthy'
+      ? `${index.labels[model]} is in line with its history over the last ${health.window_folds} folds.`
+      : `${index.labels[model]} is ${health.status}: recent Rank IC ${num(health.recent_mean_rank_ic, 3)} against ${num(health.historical_mean_rank_ic, 3)}.`]);
   }
-  return sentences.join(' ');
+  return points;
 }
 
 export default {
@@ -61,7 +54,7 @@ export default {
         <div class="kpi"><div class="label">${raw(term('health'))}</div><div class="value">${raw(statusBadge(health.status))}</div><div class="sub">Recent IC ${num(health.recent_mean_rank_ic, 3)} over ${health.window_folds} folds</div></div>
         <div class="kpi"><div class="label">Portfolio</div><div class="value">${holdings.length} names</div><div class="sub">${entering} entering at this signal</div></div>
       </div>
-      <section class="verdict" aria-labelledby="verdict-title"><h2 id="verdict-title">Research read-out</h2><p>${verdict(index, model)}</p></section>
+      <section class="verdict" aria-labelledby="verdict-title"><h2 id="verdict-title">Research read-out</h2><dl class="verdict-points">${verdict(index, model).map(([label, text]) => raw(html`<div><dt>${label}</dt><dd>${text}</dd></div>`))}</dl></section>
       <div class="grid cols-main">
         <div class="stack">
           <section class="panel">

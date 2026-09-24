@@ -460,3 +460,8 @@ details.advanced[open] { padding-bottom: 12px; }
 .skeleton-panel { height: 420px; }
 @media (max-width: 900px) { .skeleton-grid { grid-template-columns: minmax(0, 1fr); } }
 .button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.verdict-points { display: grid; gap: 6px; margin: 0; }
+.verdict-points > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.verdict-points dt { color: var(--accent); font: 500 11.5px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.verdict-points dd { margin: 0; color: var(--ink); line-height: 1.5; }
+@media (max-width: 520px) { .verdict-points > div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
