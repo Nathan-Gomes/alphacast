@@ -188,17 +188,17 @@ def main(output: Path) -> None:
         s = summaries[model]
         cls = ' class="win"' if model == "random_forest" else ""
         tag = {
-            "random_forest": '<span class="tag">Only significant</span>',
+            "random_forest": '<span class="tag">Strongest</span>',
             "momentum": ' <span style="color:#a2a5a8">(baseline)</span>',
             "ensemble": ' <span style="color:#a2a5a8">(declared in advance)</span>',
         }.get(model, "")
         rows_html.append(
-            f"<tr{cls}><td>{LABELS[model]}{tag}</td><td>{s['mean_rank_ic']:.3f}</td><td>{s['ic_t_stat']:.2f}</td>"
+            f"<tr{cls}><td>{LABELS[model]}{tag}</td><td>{s['mean_rank_ic']:.3f}</td><td>{s['ic_t_stat']:.2f}</td><td>{s['p_value_holm']:.2f}</td>"
             f"<td>{pct(s['positive_ic_rate'], 0)}</td><td>{pct(s['mean_q1_q5_spread'], 2)}</td><td>{s['net_sharpe']:.2f}</td>"
             f"<td>{pct(s['mean_turnover'], 0)}</td><td>{pct(s['max_drawdown'])}</td></tr>"
         )
     rows_html.append(
-        f'<tr class="bench"><td>Equal-weight universe</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>'
+        f'<tr class="bench"><td>Equal-weight universe</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>'
         f"<td>{rf['benchmark_sharpe']:.2f}</td><td>&mdash;</td><td>{pct(rf['benchmark_max_drawdown'])}</td></tr>"
     )
     regime_parts = []
@@ -278,6 +278,8 @@ def main(output: Path) -> None:
         signal=month(ws["signal_date"]),
         rf_ic=f"{rf['mean_rank_ic']:.3f}",
         rf_t=f"{rf['ic_t_stat']:.1f}",
+        rf_p=f"{rf['p_value']:.3f}",
+        rf_holm=f"{rf['p_value_holm']:.2f}",
         rf_pos=pct(rf["positive_ic_rate"], 0),
         mom_ic=f"{mom['mean_rank_ic']:.3f}",
         mom_t=f"{mom['ic_t_stat']:.1f}",

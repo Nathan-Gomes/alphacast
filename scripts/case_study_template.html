@@ -7,7 +7,7 @@
 <meta name="description" content="AlphaCast: a machine-learning equity ranking workstation by Nathan Gomes. Six models on embargoed walk-forward folds across 98 US large caps, live signals, portfolio construction and model monitoring.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AlphaCast: machine-learning equity ranking workstation">
-<meta property="og:description" content="Six models on embargoed walk-forward folds across 98 US large caps. Random Forest found a small, statistically real ranking signal that survived costs and fades in calm markets.">
+<meta property="og:description" content="Six models on embargoed walk-forward folds across 98 US large caps. Random Forest found a small ranking signal that survived costs, suggestive rather than conclusive after adjusting for six models, and it fades in calm markets.">
 <meta property="og:image" content="https://www.nathan-gomes.com/assets/alphacast-overview.png">
 <meta property="og:url" content="https://www.nathan-gomes.com/Project-AlphaCast.dc.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -67,7 +67,7 @@
           <p class="eyebrow"><span class="live-badge">Current focus &nbsp;/&nbsp; Machine-learning equity research</span></p>
           <h1>AlphaCast</h1>
           <p class="deck">A research workstation that ranks 98 US large caps by their expected return against their own sector over the next 20 trading sessions, tests six models (five plus an ensemble) on the same walk-forward folds, and turns the ranking into a portfolio it keeps monitoring.</p>
-          <div class="verdict"><strong>The verdict:</strong> one model, Random Forest, found a small but statistically real ranking signal (Rank IC {rf_ic}, t = {rf_t}) that survived costs. It is concentrated in volatile markets, most models did not beat plain momentum, and every model has weakened over the last six months.</div>
+          <div class="verdict"><strong>The verdict:</strong> Random Forest found the strongest ranking signal (Rank IC {rf_ic}, t = {rf_t}, p = {rf_p}) and it survived costs, but once six models are compared the evidence is suggestive rather than conclusive (Holm-adjusted p = {rf_holm}). The edge is concentrated in volatile markets, most models did not beat plain momentum, and every model has weakened over the last six months.</div>
           <div class="btnrow">
             <a class="btn btn-primary" href="https://alphacast.onrender.com" target="_blank" rel="noreferrer">Launch the app</a>
             <a class="btn btn-ghost" href="https://github.com/Nathan-Gomes/alphacast/blob/main/docs/METHODOLOGY.md" target="_blank" rel="noreferrer">Read the methodology</a>
@@ -89,7 +89,7 @@
           <span class="score-label">Mean Rank IC</span>
           <strong class="score-value">{rf_ic}</strong>
           <div class="score-vs">t = {rf_t} &middot; momentum {mom_ic}</div>
-          <span class="pill pill-good">Only model with t &gt; 2</span>
+          <span class="pill pill-flat">Holm-adjusted p = {rf_holm}</span>
         </div>
         <div class="score">
           <span class="score-label">Net Sharpe</span>
@@ -118,8 +118,8 @@
       <div class="takeaways">
         <div class="takeaway">
           <span class="takeaway-n">1</span>
-          <h3>The signal is small, and only one model has it</h3>
-          <p>Random Forest ranked stocks with a mean Rank IC of <b>{rf_ic}</b>, positive in <b>{rf_pos}</b> of {folds} months, the only result with a t-statistic above 2. That is typical of real equity signals: useful as a tilt, nowhere near a forecast.</p>
+          <h3>The signal is small, and only suggestive</h3>
+          <p>Random Forest ranked stocks with a mean Rank IC of <b>{rf_ic}</b>, positive in <b>{rf_pos}</b> of {folds} months, the only t-statistic above 2 (p = {rf_p}). Adjusted for testing six models, p rises to <b>{rf_holm}</b>. That is typical of real equity signals: useful as a tilt, nowhere near a forecast.</p>
         </div>
         <div class="takeaway">
           <span class="takeaway-n">2</span>
@@ -189,7 +189,7 @@
         {ic_legend}
         <div class="tablewrap">
           <table class="results">
-            <thead><tr><th>Model</th><th>Mean IC</th><th>t-stat</th><th>IC &gt; 0</th><th>Q1 &minus; Q5</th><th>Net Sharpe</th><th>Turnover</th><th>Max DD</th></tr></thead>
+            <thead><tr><th>Model</th><th>Mean IC</th><th>t-stat</th><th>p (Holm)</th><th>IC &gt; 0</th><th>Q1 &minus; Q5</th><th>Net Sharpe</th><th>Turnover</th><th>Max DD</th></tr></thead>
             <tbody>
 {result_rows}
             </tbody>
