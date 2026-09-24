@@ -12,7 +12,7 @@ function duration(seconds) {
 
 function historyHtml(runs, activeId) {
   if (!runs.length) return '<p class="empty">No runs yet.</p>';
-  return `<table><thead><tr><th scope="col">Run</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>${runs.map((run) => {
+  return `<table><thead><tr><th scope="col">Run</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody>${runs.map((run) => {
     const running = run.status === 'running' || run.status === 'queued';
     const progress = running ? `<div class="progress" aria-label="Progress ${Math.round(run.progress * 100)}%"><b style="width:${Math.round(run.progress * 100)}%"></b></div><div class="muted" style="font-size:11.5px;margin-top:3px;white-space:normal">${escapeHtml(run.message)}</div>` : '';
     const error = run.status === 'failed' ? `<div class="neg" style="font-size:12px;white-space:normal;max-width:320px">${escapeHtml(run.error)}</div>` : '';

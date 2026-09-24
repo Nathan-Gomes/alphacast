@@ -33,7 +33,9 @@ export function dataTable(container, {
     const head = columns.map((column) => {
       const active = column.key === state.sortKey;
       const sortAttr = active ? ` aria-sort="${state.sortDir === 'asc' ? 'ascending' : 'descending'}"` : '';
-      const label = column.sortable === false
+      const label = column.srLabel
+        ? `<span class="sr-only">${escapeHtml(column.srLabel)}</span>`
+        : column.sortable === false
         ? escapeHtml(column.label)
         : `<button type="button" data-sort="${escapeHtml(column.key)}">${escapeHtml(column.label)}</button>`;
       return `<th scope="col" class="${column.num ? 'num' : ''}"${sortAttr}${column.title ? ` title="${escapeHtml(column.title)}"` : ''}>${label}</th>`;

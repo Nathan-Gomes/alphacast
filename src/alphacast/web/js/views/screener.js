@@ -33,7 +33,7 @@ export default {
       <p class="note">Score percentile ranks the model output within today's cross-section (100 = most attractive). Factor columns are descriptive percentiles: momentum (6M, 12-1, 50/200 MA), relative strength (3M vs market and sector), low risk (inverse volatility and drawdown), liquidity (20-day dollar volume). They describe a profile; they are not the model's weights.${hasPrediction ? ' Model output is the predicted 20-session return relative to the sector, most useful as an ordering.' : ''}</p>`;
 
     const columns = [
-      { key: 'star', label: '', sortable: false, render: (row) => starButton(row.ticker) },
+      { key: 'star', label: '', srLabel: 'Watchlist', sortable: false, render: (row) => starButton(row.ticker) },
       { key: 'rank', label: 'Rank', num: true },
       { key: 'ticker', label: 'Ticker', render: (row) => tickerLink(row.ticker) },
       { key: 'sector', label: 'Sector', render: (row) => html`<span class="sector">${sectorShort(row.sector)}</span>` },

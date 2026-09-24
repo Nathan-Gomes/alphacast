@@ -118,7 +118,7 @@ export default {
       document.getElementById('watch-panel').hidden = !watched.length;
       if (!watched.length) return;
       dataTable(document.getElementById('watch-table'), {
-        columns: [{ key: 'star', label: '', sortable: false, render: (row) => starButton(row.ticker) }, ...rankColumns],
+        columns: [{ key: 'star', label: '', srLabel: 'Watchlist', sortable: false, render: (row) => starButton(row.ticker) }, ...rankColumns],
         rows: watched, sortKey: 'rank', sortDir: 'asc', onRowClick: open,
         afterRender: (element) => bindStars(element, renderWatch),
       });
