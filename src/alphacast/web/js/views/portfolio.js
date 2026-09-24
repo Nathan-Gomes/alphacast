@@ -12,7 +12,7 @@ import { panel, pctBar, rankChange, tickerLink } from './parts.js';
 
 export default {
   title: 'Portfolio',
-  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}, long-only, rebalanced monthly`,
+  subtitle: (ctx) => `Equal-weight top ${ctx.index.ws.config.top_n} by ${ctx.index.labels[ctx.model]}${ctx.index.ws.config.max_per_sector ? `, at most ${ctx.index.ws.config.max_per_sector} per sector` : ''}, long-only, rebalanced monthly`,
   render(ctx) {
     const { index, model } = ctx;
     const rows = liveRows(index, model);
@@ -55,7 +55,7 @@ export default {
                 </span>
                 <span class="val ${toneClass(row.active)}">${pct(row.active, 0, { sign: true })}</span>
               </div>`).join('')}</div>
-            <p class="note">Right column: active weight vs universe. The sleeve has no sector constraint, so concentration is a result of the ranking and worth watching.</p>` }))}
+            <p class="note">Right column: active weight vs universe. ${index.ws.config.max_per_sector ? `This run caps the sleeve at ${index.ws.config.max_per_sector} names per sector.` : 'The sleeve has no sector constraint, so concentration is a result of the ranking and worth watching. New runs can cap names per sector.'}</p>` }))}
           ${raw(panel({ title: 'Factor tilts', note: 'Average percentile of the holdings minus the universe average of 50. Positive means the book leans that way.', body: '<div id="tilts"></div><div class="table-wrap" id="tilt-table" style="margin-top:12px"></div>' }))}
           ${raw(panel({ title: 'Entering', note: 'New to the book at this signal.', body: '<div id="entering"></div>', flush: true }))}
           ${raw(panel({ title: 'Exiting', note: 'Held at the last rebalance, now outside the top ranks.', body: '<div id="exiting"></div>', flush: true }))}

@@ -39,3 +39,18 @@ def test_rebalance_charges_cost_for_a_changed_holding_set():
     assert step.turnover == 0.5
     assert step.transaction_cost == 0.0005
     assert step.net_return == step.gross_return - step.transaction_cost
+
+
+def test_sector_cap_fills_places_from_other_sectors():
+    from alphacast.portfolio import select_top
+
+    rows = pd.DataFrame(
+        {
+            "ticker": ["A", "B", "C", "D", "E"],
+            "sector": ["Tech", "Tech", "Tech", "Energy", "Health"],
+        }
+    )
+    scores = pd.Series([5.0, 4.0, 3.0, 2.0, 1.0])
+    assert list(select_top(rows, scores, top_n=3).ticker) == ["A", "B", "C"]
+    assert list(select_top(rows, scores, top_n=3, max_per_sector=1).ticker) == ["A", "D", "E"]
+    assert list(select_top(rows, scores, top_n=4, max_per_sector=2).ticker) == ["A", "B", "D", "E"]

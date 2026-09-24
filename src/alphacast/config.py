@@ -34,6 +34,8 @@ class ResearchConfig:
     refit_every_folds: int = 3
     rebalance: str = "monthly"
     top_n: int = 15
+    # Optional cap on names per sector in the top-ranked sleeve; None means no cap.
+    max_per_sector: int | None = None
     transaction_cost_bps: float = 10.0
     monitoring_window: int = 6
     models: tuple[str, ...] = SUPPORTED_MODELS

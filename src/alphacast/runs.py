@@ -41,6 +41,7 @@ class RunRequest:
             "start": self.config.start,
             "end": self.config.end,
             "top_n": self.config.top_n,
+            "max_per_sector": self.config.max_per_sector,
             "transaction_cost_bps": self.config.transaction_cost_bps,
         }
 

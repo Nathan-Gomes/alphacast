@@ -96,7 +96,7 @@ function renderContext() {
     <span>Signal as of <b>${date(ws.signal_date)}</b></span><span class="sep"></span>
     <span><b>${ws.dataset}</b></span><span class="sep"></span>
     <span><b>${int(ws.quality.accepted_tickers)}</b> securities · <b>${int(summary?.folds)}</b> monthly out-of-sample folds</span><span class="sep"></span>
-    <span>${ws.config.horizon_sessions}-session horizon · ${ws.config.embargo_sessions}-session embargo · ${ws.config.transaction_cost_bps} bps costs</span>`;
+    <span>${ws.config.horizon_sessions}-session horizon · ${ws.config.embargo_sessions}-session embargo · ${ws.config.transaction_cost_bps} bps costs${ws.config.max_per_sector ? ` · ≤${ws.config.max_per_sector} names per sector` : ''}</span>`;
   const unavailable = ws.quality.unavailable_tickers || [];
   if (unavailable.length) {
     bar.insertAdjacentHTML('beforeend', html`<span class="sep"></span><span class="neg" title="Yahoo Finance returned no prices for: ${unavailable.join(', ')}">${unavailable.length} ticker${unavailable.length === 1 ? '' : 's'} unavailable</span>`);

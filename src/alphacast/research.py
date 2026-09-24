@@ -22,7 +22,7 @@ from .features import (
     research_ready,
     with_cross_sectional_ranks,
 )
-from .portfolio import top_ranked_portfolio
+from .portfolio import select_top, top_ranked_portfolio
 from .ranking import (
     fit_ranker,
     importance_from_attribution,
@@ -444,6 +444,7 @@ def run_research(
                 previous_weights,
                 top_n=config.top_n,
                 transaction_cost_bps=config.transaction_cost_bps,
+                max_per_sector=config.max_per_sector,
             )
             periods.append(
                 {
@@ -496,7 +497,10 @@ def run_research(
         live_scores = ranker.score(live_rows)
         contributions = ranker.attribution(live_rows)
         order = live_scores.rank(ascending=False, method="first").astype(int)
-        top = order <= min(config.top_n, len(order))
+        chosen = select_top(
+            live_rows, live_scores, top_n=config.top_n, max_per_sector=config.max_per_sector
+        )
+        top = live_rows.ticker.isin(chosen.ticker)
         live = pd.DataFrame(
             {
                 "model": model_name,

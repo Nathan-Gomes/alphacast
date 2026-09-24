@@ -20,7 +20,7 @@ function historyHtml(runs, activeId) {
       ? `${run.id === activeId ? '<span class="tag">Active</span>' : `<button class="button small" type="button" data-open="${escapeHtml(run.id)}">Open</button>`} <a class="button small" href="${api.exportUrl(run.id)}" download>JSON</a>`
       : '';
     const models = (run.request?.models || []).length;
-    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
+    return `<tr><td><strong>${escapeHtml(run.name)}</strong><div class="muted" style="font-size:12px;white-space:normal">${escapeHtml(run.dataset || run.request?.source || '')}${run.signal_date ? ` · signal ${date(run.signal_date)}` : ''}</div><div class="muted" style="font-size:12px">${models} model${models === 1 ? '' : 's'} · top ${escapeHtml(run.request?.top_n ?? '')}${run.request?.max_per_sector ? ` (≤${escapeHtml(run.request.max_per_sector)}/sector)` : ''} · ${escapeHtml(run.request?.transaction_cost_bps ?? '')} bps</div></td>
       <td style="min-width:150px">${statusBadge(run.status)}${progress}${error}</td>
       <td class="num">${actions}</td></tr>`;
   }).join('')}</tbody></table>`;
@@ -69,6 +69,7 @@ export default {
                 <div class="model-checks">${catalog.models.map((model) => raw(html`<label class="check" title="About ${duration(model.seconds)} on this server"><input type="checkbox" name="models" value="${model.id}" ${raw(model.default ? 'checked' : '')}> ${model.label}${raw(model.seconds >= 60 ? ' <span class="tag">slower</span>' : '')}</label>`))}</div>
               </fieldset>
               <label class="field">Portfolio size (top N) <input type="number" name="top_n" min="3" max="40" value="${catalog.defaults.top_n}"></label>
+              <label class="field">Max names per sector <select name="max_per_sector"><option value="">No cap</option>${[2, 3, 4, 5].map((cap) => raw(`<option value="${cap}">${cap}</option>`))}</select></label>
               <label class="field">One-way cost (bps) <input type="number" name="transaction_cost_bps" min="0" max="250" step="1" value="${catalog.defaults.transaction_cost_bps}"></label>
             </div>
             <p class="form-error" id="form-error" role="alert"></p>
@@ -118,6 +119,7 @@ export default {
         end: data.get('end'),
         models,
         top_n: Number(data.get('top_n')),
+        max_per_sector: data.get('max_per_sector') ? Number(data.get('max_per_sector')) : null,
         transaction_cost_bps: Number(data.get('transaction_cost_bps')),
       };
       if (!models.length) { error.textContent = 'Select at least one model.'; return; }

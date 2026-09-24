@@ -38,6 +38,7 @@ class RunPayload(BaseModel):
     end: str = Field(default_factory=lambda: datetime.now(timezone.utc).date().isoformat())
     models: list[str] = Field(default_factory=lambda: list(SUPPORTED_MODELS))
     top_n: int = Field(default=15, ge=3, le=40)
+    max_per_sector: int | None = Field(default=None, ge=1, le=20)
     transaction_cost_bps: float = Field(default=10.0, ge=0, le=250)
 
     @field_validator("start", "end")
@@ -132,6 +133,7 @@ def create_run(payload: RunPayload) -> dict[str, object]:
         models=models,
         top_n=payload.top_n,
         transaction_cost_bps=payload.transaction_cost_bps,
+        max_per_sector=payload.max_per_sector,
     )
     name = payload.name.strip() or f"{payload.source.title()} · {len(models)} models"
     record = registry.submit(
