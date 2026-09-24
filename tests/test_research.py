@@ -100,3 +100,13 @@ def test_placebo_labels_leave_no_signal():
     run = run_research(placebo, source="synthetic", config=config)
     for row in run.summaries.itertuples():
         assert abs(row.ic_t_stat) < 3, f"{row.model} found signal in shuffled data: t={row.ic_t_stat:.2f}"
+
+
+def test_signal_decay_matches_the_headline_ic_at_the_target_horizon():
+    config = ResearchConfig(models=("momentum", "ridge"), minimum_train_sessions=252)
+    run = run_research(synthetic_prices(sessions=700, securities=15), source="synthetic", config=config)
+    decay = run.decay.set_index(["model", "horizon"])
+    assert set(decay.index.get_level_values("horizon")) == {5, 10, 20, 40, 60}
+    for model in ("momentum", "ridge"):
+        headline = run.summaries.set_index("model").loc[model, "mean_rank_ic"]
+        assert abs(decay.loc[(model, 20), "mean_rank_ic"] - headline) < 1e-9

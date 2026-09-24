@@ -64,6 +64,7 @@ class ResearchRun:
     profiles: pd.DataFrame
     drift: pd.DataFrame
     sectors: pd.DataFrame
+    decay: pd.DataFrame
     history: pd.DataFrame
     attribution: pd.DataFrame
     weekly_prices: pd.DataFrame
@@ -104,6 +105,7 @@ class ResearchRun:
             "profiles": _records(self.profiles),
             "drift": _records(self.drift),
             "sectors": _records(self.sectors),
+            "decay": _records(self.decay),
             "limits": LIMITS,
         }
 
@@ -350,6 +352,54 @@ def _sector_summary(history: pd.DataFrame, sector_of: pd.Series) -> pd.DataFrame
             }
         )
     return pd.DataFrame(rows).sort_values(["model", "mean_active_weight"], ascending=[True, False])
+
+
+DECAY_HORIZONS = (5, 10, 20, 40, 60)
+
+
+def _forward_sector_excess(panel: pd.DataFrame, horizon: int) -> pd.Series:
+    """Forward return over ``horizon`` sessions minus the sector's equal-weight mean."""
+    forward = panel.groupby("ticker").adjusted_close.transform(
+        lambda values: values.shift(-horizon) / values - 1
+    )
+    return forward - forward.groupby([panel.date, panel.sector]).transform("mean")
+
+
+def _signal_decay(
+    panel: pd.DataFrame, history: pd.DataFrame, horizons: tuple[int, ...] = DECAY_HORIZONS
+) -> pd.DataFrame:
+    """Mean Rank IC of each model's fold scores against outcomes at several horizons.
+
+    Evaluation only: the models are trained on the 20-session target. A signal whose IC
+    falls quickly past 20 sessions is short-lived; one that holds is slower-moving.
+    """
+    outcomes = panel.loc[:, ["date", "ticker"]].copy()
+    for horizon in horizons:
+        outcomes[f"h{horizon}"] = _forward_sector_excess(panel, horizon).to_numpy()
+    merged = history.merge(outcomes, on=["date", "ticker"], how="left")
+    rows = []
+    for model, group in merged.groupby("model", sort=False):
+        for horizon in horizons:
+            column = f"h{horizon}"
+            ic = (
+                group.dropna(subset=[column])
+                .groupby("date")
+                .apply(
+                    lambda rows, column=column: rows.percentile.corr(rows[column], method="spearman"),
+                    include_groups=False,
+                )
+                .dropna()
+            )
+            rows.append(
+                {
+                    "model": model,
+                    "horizon": horizon,
+                    "folds": len(ic),
+                    "mean_rank_ic": float(ic.mean()) if len(ic) else np.nan,
+                    "ic_t_stat": _ratio(ic.mean(), ic.std(ddof=1) / np.sqrt(len(ic))) if len(ic) > 1 else 0.0,
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def _weekly_prices(prices: pd.DataFrame) -> pd.DataFrame:
@@ -631,6 +681,7 @@ def run_research(
         live=pd.concat(live_frames, ignore_index=True),
         profiles=profiles,
         drift=_feature_drift(full_panel).reset_index(drop=True),
+        decay=_signal_decay(full_panel, history_frame),
         sectors=_sector_summary(
             history_frame, live_rows.set_index("ticker").sector
         ).reset_index(drop=True),

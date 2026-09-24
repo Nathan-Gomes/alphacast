@@ -83,7 +83,9 @@ function xLabels(dates, scaleX, bottom, count, format = (value) => date(value, '
   const step = Math.max(1, Math.ceil(dates.length / count));
   const indices = [];
   for (let index = 0; index < dates.length; index += step) indices.push(index);
-  return indices.map((index) => `<text x="${scaleX(index)}" y="${bottom + 18}" text-anchor="middle">${escapeHtml(format(dates[index]))}</text>`).join('');
+  // Edge labels anchor inward so they never clip at the plot boundary.
+  const anchor = (index) => (index === 0 && indices.length > 1 ? 'start' : index === dates.length - 1 ? 'end' : 'middle');
+  return indices.map((index) => `<text x="${scaleX(index)}" y="${bottom + 18}" text-anchor="${anchor(index)}">${escapeHtml(format(dates[index]))}</text>`).join('');
 }
 
 function linePath(values, scaleX, scaleY) {
