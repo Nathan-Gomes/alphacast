@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -17,6 +18,31 @@ def test_quality_gate_rejects_duplicate_ticker_date_observations():
     duplicate = pd.concat([prices, prices.iloc[[0]]], ignore_index=True)
     with pytest.raises(ValueError, match="duplicate"):
         validate_price_panel(duplicate, source="synthetic")
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [
+        ("adjusted_close", np.nan),
+        ("adjusted_close", np.inf),
+        ("volume", np.nan),
+        ("volume", np.inf),
+    ],
+)
+def test_quality_gate_rejects_missing_or_non_finite_market_values(column, value):
+    prices = synthetic_prices(sessions=350, securities=12)
+    prices[column] = prices[column].astype(float)
+    prices.loc[0, column] = value
+    with pytest.raises(ValueError, match="missing or non-finite"):
+        validate_price_panel(prices, source="synthetic")
+
+
+@pytest.mark.parametrize(("column", "value"), [("date", pd.NaT), ("ticker", ""), ("sector", None)])
+def test_quality_gate_rejects_missing_observation_identity(column, value):
+    prices = synthetic_prices(sessions=350, securities=12)
+    prices.loc[0, column] = value
+    with pytest.raises(ValueError, match=f"missing {column}"):
+        validate_price_panel(prices, source="synthetic")
 
 
 def test_partially_published_sessions_are_dropped():

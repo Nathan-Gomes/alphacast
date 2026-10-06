@@ -93,9 +93,23 @@ def validate_price_panel(
     if missing:
         raise ValueError(f"Missing market-data columns: {', '.join(sorted(missing))}")
     panel = prices.copy()
-    panel["date"] = pd.to_datetime(panel["date"])
+    try:
+        panel["date"] = pd.to_datetime(panel["date"], errors="raise")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Market data contains invalid dates.") from exc
+    if panel.date.isna().any():
+        raise ValueError("Market data contains missing dates.")
+    for column in ("ticker", "sector"):
+        values = panel[column]
+        if values.isna().any() or values.astype(str).str.strip().eq("").any():
+            raise ValueError(f"Market data contains missing {column} values.")
     if panel.duplicated(["date", "ticker"]).any():
         raise ValueError("Market data contains duplicate ticker-date observations.")
+    numeric = panel[["adjusted_close", "volume"]]
+    if not all(pd.api.types.is_numeric_dtype(numeric[column]) for column in numeric):
+        raise ValueError("Market data prices and volume must be numeric.")
+    if numeric.isna().any().any() or not np.isfinite(numeric.to_numpy(dtype=float)).all():
+        raise ValueError("Market data contains missing or non-finite prices or volume.")
     if (panel.adjusted_close <= 0).any() or (panel.volume < 0).any():
         raise ValueError("Market data contains non-positive prices or negative volume.")
     sessions = panel.date.nunique()
