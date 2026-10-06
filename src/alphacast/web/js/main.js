@@ -265,8 +265,11 @@ function bindShell() {
   bindGlossary();
   const palette = initPalette(() => ({ index: state.index, navigate, setModel }));
   initShortcutHelp();
-  $('search-button').addEventListener('click', () => palette.open());
-  if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('search-button').querySelector('kbd').textContent = 'Ctrl K';
+  const searchButton = $('search-button');
+  const searchShortcut = searchButton.querySelector('kbd');
+  searchButton.addEventListener('click', () => palette.open());
+  if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) searchShortcut.textContent = 'Ctrl K';
+  searchButton.setAttribute('aria-label', `Search ${searchShortcut.textContent}: tickers and views`);
   window.addEventListener('hashchange', render);
   $('run-select').addEventListener('change', (event) => openRun(event.target.value));
   $('model-select').addEventListener('change', (event) => setModel(event.target.value));
@@ -311,4 +314,3 @@ async function boot() {
 }
 
 boot();
-
